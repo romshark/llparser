@@ -1,0 +1,37 @@
+language: go
+
+go:
+  - master
+  - "1.12"
+
+install: true
+
+matrix:
+  allow_failures:
+    - go: master
+  fast_finish: true
+
+notifications:
+  email: true
+
+before_script:
+  - GO_FILES=$(find . -iname '*.go' -type f | grep -v /vendor/) # All the .go files, excluding vendor/
+  - go get golang.org/x/lint/golint # Linter
+  - go get golang.org/x/tools/cmd/cover
+  - go get github.com/mattn/goveralls
+  - go get github.com/go-playground/overalls
+  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.16.0
+
+script:
+  # go vet
+  - go vet ./...
+
+  # golangci-link
+  - golangci-lint run ./...
+
+  # golint
+  - golint -set_exit_status $(go list ./...)
+
+  # Run all the tests with the race detector enabled
+  - overalls -project=github.com/romshark/llparser -covermode=atomic -debug -- -race -v -coverpkg=./...
+  - $HOME/gopath/bin/goveralls -coverprofile=overalls.coverprofile -service=travis-ci -repotoken=$COVERALLS_TOKEN
