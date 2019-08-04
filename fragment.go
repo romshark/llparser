@@ -11,4 +11,3 @@ type Fragment interface {
 	Src() string
 	Elements() []Fragment
 }
-

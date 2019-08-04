@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	parser "github.com/romshark/llparser"
-
 	"github.com/stretchr/testify/require"
 )
 

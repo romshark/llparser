@@ -1,9 +1,9 @@
 package parser_test
 
 import (
-	parser "github.com/romshark/llparser"
 	"testing"
 
+	parser "github.com/romshark/llparser"
 	"github.com/stretchr/testify/require"
 )
 
