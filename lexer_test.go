@@ -81,10 +81,7 @@ func finalizedToken(
 }
 
 func (lx *TestLexer) reachedEOF() bool {
-	if lx.cr.Index >= uint(len(lx.cr.File.Src)) {
-		return true
-	}
-	return false
+	return lx.cr.Index >= uint(len(lx.cr.File.Src))
 }
 
 func (lx *TestLexer) readSpace() *parser.Token {
