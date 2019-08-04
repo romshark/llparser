@@ -1,4 +1,4 @@
-module parser
+module github.com/romshark/llparser
 
 go 1.12
 
