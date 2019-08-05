@@ -10,7 +10,12 @@ type Token struct {
 }
 
 // Kind returns the kind of the token fragment
-func (tk *Token) Kind() FragmentKind { return tk.VKind }
+func (tk *Token) Kind() FragmentKind {
+	if tk == nil {
+		return 0
+	}
+	return tk.VKind
+}
 
 // Begin returns the beginning cursor of the token fragment
 func (tk *Token) Begin() Cursor { return tk.VBegin }
@@ -20,6 +25,9 @@ func (tk *Token) End() Cursor { return tk.VEnd }
 
 // Src returns the source code of the token fragment
 func (tk *Token) Src() string {
+	if tk == nil {
+		return ""
+	}
 	return tk.VBegin.File.Src[tk.VBegin.Index:tk.VEnd.Index]
 }
 

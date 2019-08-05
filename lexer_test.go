@@ -18,14 +18,14 @@ const (
 
 // Basic terminal types
 var (
-	testR_A = &parser.Rule{
-		Designation: "Terminal A",
-		Pattern:     parser.TermExact("a"),
+	testR_foo = &parser.Rule{
+		Designation: "keyword foo",
+		Pattern:     parser.TermExact("foo"),
 		Kind:        TestFrA,
 	}
-	testR_B = &parser.Rule{
-		Designation: "Terminal B",
-		Pattern:     parser.TermExact("b"),
+	testR_bar = &parser.Rule{
+		Designation: "keyword bar",
+		Pattern:     parser.TermExact("bar"),
 		Kind:        TestFrB,
 	}
 )

@@ -14,3 +14,6 @@ type Rule struct {
 
 // TerminalPattern implements the Pattern interface
 func (rl *Rule) TerminalPattern() Pattern { return rl.Pattern }
+
+// Desig implements the Pattern interface
+func (rl *Rule) Desig() string { return rl.Designation }

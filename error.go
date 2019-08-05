@@ -2,16 +2,32 @@ package parser
 
 import "fmt"
 
-// ErrorCode represents an error code
-type ErrorCode string
-
-// Error represents a parser error
-type Error struct {
-	Code ErrorCode
-	Msg  string
-	At   Cursor
+// Err represents a generic parser error
+type Err struct {
+	Msg string
+	At  Cursor
 }
 
-func (err *Error) Error() string {
-	return fmt.Sprintf("%s: %s at %s", err.Code, err.Msg, err.At.String())
+func (err *Err) Error() string {
+	return fmt.Sprintf("%s at %s", err.Msg, err.At.String())
+}
+
+// ErrUnexpectedToken represents a parser error
+type ErrUnexpectedToken struct {
+	At       Cursor
+	Expected Pattern
+	Actual   *Token
+}
+
+func (err *ErrUnexpectedToken) Error() string {
+	actualStr := "<nil>"
+	if err.Actual != nil {
+		actualStr = err.Actual.Src()
+	}
+	return fmt.Sprintf(
+		"unexpected token '%s', expected {%s} at %s",
+		actualStr,
+		err.Expected.Desig(),
+		err.At,
+	)
 }

@@ -28,7 +28,15 @@ func (pr Parser) handlePattern(
 ) (Fragment, error) {
 	switch pt := pattern.(type) {
 	case *Rule:
-		return pr.parseRule(scanner.New(), pt)
+		tk, err := pr.parseRule(scanner.New(), pt)
+		if err, ok := err.(*ErrUnexpectedToken); ok {
+			// Override expected pattern to the higher-order rule
+			err.Expected = pt
+			return nil, err
+		} else if err != nil {
+			return nil, err
+		}
+		return tk, nil
 	case Term:
 		// Terminal
 		return pr.parseTerm(scanner, pt)
@@ -68,10 +76,7 @@ func (pr Parser) parseSequence(
 	for _, pt := range patterns {
 		frag, err := pr.handlePattern(scanner, pt)
 		if err != nil {
-			return frag, err
-		}
-		if frag == nil {
-			return nil, nil
+			return nil, err
 		}
 		// Append rule patterns, other patterns are appended automatically
 		if _, isRule := pt.(*Rule); isRule {
@@ -83,31 +88,38 @@ func (pr Parser) parseSequence(
 
 func (pr Parser) parseTermExact(
 	scanner *Scanner,
-	term TermExact,
+	expected TermExact,
 ) (Fragment, error) {
+	beforeCr := scanner.Lexer.Position()
 	tk, err := scanner.Next()
 	if err != nil {
 		return nil, err
 	}
-	if string(term) != tk.Src() {
-		return nil, nil
+	if tk == nil || tk.Src() != string(expected) {
+		return nil, &ErrUnexpectedToken{
+			At:       beforeCr,
+			Expected: expected,
+			Actual:   tk,
+		}
 	}
 	return tk, nil
 }
 
 func (pr Parser) parseTerm(
 	scanner *Scanner,
-	term Term,
+	expected Term,
 ) (Fragment, error) {
+	beforeCr := scanner.Lexer.Position()
 	tk, err := scanner.Next()
 	if err != nil {
 		return nil, err
 	}
-	if tk == nil {
-		return nil, nil
-	}
-	if tk.VKind != FragmentKind(term) {
-		return nil, nil
+	if tk == nil || tk.VKind != FragmentKind(expected) {
+		return nil, &ErrUnexpectedToken{
+			At:       beforeCr,
+			Expected: expected,
+			Actual:   tk,
+		}
 	}
 	return tk, nil
 }
