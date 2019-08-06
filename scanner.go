@@ -64,7 +64,15 @@ func (sc *Scanner) Append(fragment Fragment) {
 // Fragment returns a typed composite fragment
 func (sc *Scanner) Fragment(kind FragmentKind) Fragment {
 	if len(sc.Records) < 1 {
-		return nil
+		pos := sc.Lexer.Position()
+		return &Construct{
+			Token: &Token{
+				VBegin: pos,
+				VEnd:   pos,
+				VKind:  kind,
+			},
+			VElements: nil,
+		}
 	}
 	begin := sc.Records[0].Begin()
 	end := sc.Records[len(sc.Records)-1].End()
@@ -76,4 +84,27 @@ func (sc *Scanner) Fragment(kind FragmentKind) Fragment {
 		},
 		VElements: sc.Records,
 	}
+}
+
+// Set sets the scanner's lexer position and tidies up the record history
+func (sc *Scanner) Set(cursor Cursor) {
+	sc.Lexer.Set(cursor)
+	sc.TidyUp()
+}
+
+// TidyUp removes all records after the current position
+func (sc *Scanner) TidyUp() int {
+	removed := 0
+	pos := sc.Lexer.Position()
+	for ix := len(sc.Records) - 1; ix >= 0; ix-- {
+		rc := sc.Records[ix]
+		if rc.Begin().Index < pos.Index {
+			break
+		}
+		removed++
+	}
+
+	// Remove the last n records
+	sc.Records = sc.Records[:len(sc.Records)-removed]
+	return removed
 }

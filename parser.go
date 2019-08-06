@@ -26,7 +26,6 @@ func (pr Parser) handlePattern(
 	scanner *Scanner,
 	pattern Pattern,
 ) (Fragment, error) {
-	beforeCr := scanner.Lexer.Position()
 	switch pt := pattern.(type) {
 	case *Rule:
 		tk, err := pr.parseRule(scanner.New(), pt)
@@ -48,21 +47,13 @@ func (pr Parser) handlePattern(
 		return pr.parseChecked(scanner, pt)
 	case ZeroOrMore:
 		// ZeroOrMore
-		panic("not yet implemented")
+		return pr.parseZeroOrMore(scanner, pt.Pattern)
 	case OneOrMore:
 		// OneOrMore
 		panic("not yet implemented")
 	case Optional:
 		// Optional
-		tk, err := pr.handlePattern(scanner, pt.Pattern)
-		if err != nil {
-			if _, ok := err.(*ErrUnexpectedToken); ok {
-				scanner.Lexer.Set(beforeCr)
-				return nil, nil
-			}
-			return nil, err
-		}
-		return tk, nil
+		return pr.parseOptional(scanner, pt.Pattern)
 	case Sequence:
 		// Sequence
 		return pr.parseSequence(scanner, pt)
@@ -94,6 +85,48 @@ func (pr Parser) parseChecked(
 		}
 	}
 	return tk, nil
+}
+
+func (pr Parser) parseOptional(
+	scanner *Scanner,
+	pattern Pattern,
+) (Fragment, error) {
+	beforeCr := scanner.Lexer.Position()
+	tk, err := pr.handlePattern(scanner, pattern)
+	if err != nil {
+		if _, ok := err.(*ErrUnexpectedToken); ok {
+			// Reset scanner to the initial position
+			scanner.Lexer.Set(beforeCr)
+			return nil, nil
+		}
+		return nil, err
+	}
+	return tk, nil
+}
+
+func (pr Parser) parseZeroOrMore(
+	scanner *Scanner,
+	pattern Pattern,
+) (Fragment, error) {
+	lastPosition := scanner.Lexer.Position()
+	i := 0
+	for {
+		frag, err := pr.handlePattern(scanner, pattern)
+		i++
+		if err != nil {
+			if _, ok := err.(*ErrUnexpectedToken); ok {
+				// Reset scanner to the last match
+				scanner.Set(lastPosition)
+				return nil, nil
+			}
+			return nil, err
+		}
+		lastPosition = scanner.Lexer.Position()
+		// Append rule patterns, other patterns are appended automatically
+		if _, isRule := pattern.(*Rule); isRule {
+			scanner.Append(frag)
+		}
+	}
 }
 
 func (pr Parser) parseSequence(
