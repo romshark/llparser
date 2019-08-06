@@ -281,3 +281,64 @@ func TestParserCheckedErr(t *testing.T) {
 	)
 	require.Nil(t, mainFrag)
 }
+
+func TestParserZeroOrMore(t *testing.T) {
+	t.Run("None", func(t *testing.T) {
+		pr := parser.NewParser()
+		lx := NewTestLexer("foo")
+		expectedKind := parser.FragmentKind(100)
+		mainFrag, err := pr.Parse(lx, &parser.Rule{
+			Designation: "(space foo)*",
+			Pattern: parser.ZeroOrMore{
+				parser.Sequence{
+					parser.Term(TestFrSpace),
+					testR_foo,
+				},
+			},
+			Kind: expectedKind,
+		})
+
+		require.NoError(t, err)
+		require.NotNil(t, mainFrag)
+		require.Len(t, mainFrag.Elements(), 0)
+	})
+
+	t.Run("One", func(t *testing.T) {
+		pr := parser.NewParser()
+		lx := NewTestLexer(" foo ")
+		expectedKind := parser.FragmentKind(100)
+		mainFrag, err := pr.Parse(lx, &parser.Rule{
+			Designation: "(space foo)*",
+			Pattern: parser.ZeroOrMore{
+				parser.Sequence{
+					parser.Term(TestFrSpace),
+					testR_foo,
+				},
+			},
+			Kind: expectedKind,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, mainFrag)
+		require.Equal(t, expectedKind, mainFrag.Kind())
+		lx.CheckCursor(t, mainFrag.Begin(), 1, 1)
+		lx.CheckCursor(t, mainFrag.End(), 1, 5)
+
+		// Check elements
+		elements := mainFrag.Elements()
+		require.Len(t, elements, 2)
+
+		// Check element 1
+		elem1 := elements[0]
+		require.Equal(t, TestFrSpace, elem1.Kind())
+		lx.CheckCursor(t, elem1.Begin(), 1, 1)
+		lx.CheckCursor(t, elem1.End(), 1, 2)
+		require.Nil(t, elem1.Elements())
+
+		// Check element 2
+		elem2 := elements[1]
+		require.Equal(t, TestFrFoo, elem2.Kind())
+		lx.CheckCursor(t, elem2.Begin(), 1, 2)
+		lx.CheckCursor(t, elem2.End(), 1, 5)
+		require.Len(t, elem2.Elements(), 1)
+	})
+}
