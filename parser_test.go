@@ -228,3 +228,56 @@ func TestParserOptionalInSequence(t *testing.T) {
 		require.Len(t, elem3.Elements(), 1)
 	})
 }
+
+func TestParserChecked(t *testing.T) {
+	pr := parser.NewParser()
+	lx := NewTestLexer("example")
+	expectedKind := parser.FragmentKind(100)
+	mainFrag, err := pr.Parse(lx, &parser.Rule{
+		Designation: "keyword 'example'",
+		Pattern: parser.Checked{"keyword 'example'", func(str string) bool {
+			return str == "example"
+		}},
+		Kind: expectedKind,
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, mainFrag)
+	require.Equal(t, expectedKind, mainFrag.Kind())
+	lx.CheckCursor(t, mainFrag.Begin(), 1, 1)
+	lx.CheckCursor(t, mainFrag.End(), 1, 8)
+
+	// Check elements
+	elements := mainFrag.Elements()
+	require.Len(t, elements, 1)
+
+	// Check element 1
+	elem1 := elements[0]
+	require.Equal(t, TestFrSeq, elem1.Kind())
+	lx.CheckCursor(t, elem1.Begin(), 1, 1)
+	lx.CheckCursor(t, elem1.End(), 1, 8)
+	require.Nil(t, elem1.Elements())
+}
+
+// TestParserCheckedErr tests checked parsing errors
+func TestParserCheckedErr(t *testing.T) {
+	pr := parser.NewParser()
+	lx := NewTestLexer("elpmaxe")
+	expectedKind := parser.FragmentKind(100)
+	mainFrag, err := pr.Parse(lx, &parser.Rule{
+		Designation: "keyword 'example'",
+		Pattern: parser.Checked{"keyword 'example'", func(str string) bool {
+			return str == "example"
+		}},
+		Kind: expectedKind,
+	})
+
+	require.Error(t, err)
+	require.Equal(
+		t,
+		"unexpected token 'elpmaxe', "+
+			"expected {keyword 'example'} at test.txt:1:1",
+		err.Error(),
+	)
+	require.Nil(t, mainFrag)
+}
