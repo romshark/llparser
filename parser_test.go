@@ -78,24 +78,24 @@ func TestParserSequence(t *testing.T) {
 
 		// Check element 1
 		elem1 := elements[0]
-		require.Equal(t, TestFrA, elem1.Kind())
-		require.Nil(t, elem1.Elements())
+		require.Equal(t, TestFrFoo, elem1.Kind())
 		lx.CheckCursor(t, elem1.Begin(), 1, 1)
 		lx.CheckCursor(t, elem1.End(), 1, 4)
+		require.Len(t, elem1.Elements(), 1)
 
 		// Check element 2
 		elem2 := elements[1]
 		require.Equal(t, TestFrSpace, elem2.Kind())
-		require.Nil(t, elem2.Elements())
 		lx.CheckCursor(t, elem2.Begin(), 1, 4)
 		lx.CheckCursor(t, elem2.End(), 1, 7)
+		require.Nil(t, elem2.Elements())
 
 		// Check element 3
 		elem3 := elements[2]
-		require.Equal(t, TestFrB, elem3.Kind())
-		require.Nil(t, elem3.Elements())
+		require.Equal(t, TestFrBar, elem3.Kind())
 		lx.CheckCursor(t, elem3.Begin(), 1, 7)
 		lx.CheckCursor(t, elem3.End(), 1, 10)
+		require.Len(t, elem3.Elements(), 1)
 	})
 }
 
@@ -143,5 +143,88 @@ func TestParserSequenceErr(t *testing.T) {
 			err.Error(),
 		)
 		require.Nil(t, mainFrag)
+	})
+}
+
+func TestParserOptionalInSequence(t *testing.T) {
+	t.Run("Missing", func(t *testing.T) {
+		pr := parser.NewParser()
+		lx := NewTestLexer("bar")
+		expectedKind := parser.FragmentKind(100)
+		mainFrag, err := pr.Parse(lx, &parser.Rule{
+			Designation: "?foo bar",
+			Pattern: parser.Sequence{
+				parser.Optional{parser.Sequence{
+					testR_foo,
+					parser.Term(TestFrSpace),
+				}},
+				testR_bar,
+			},
+			Kind: expectedKind,
+		})
+
+		require.NoError(t, err)
+		require.NotNil(t, mainFrag)
+		require.Equal(t, expectedKind, mainFrag.Kind())
+		lx.CheckCursor(t, mainFrag.Begin(), 1, 1)
+		lx.CheckCursor(t, mainFrag.End(), 1, 4)
+
+		// Check elements
+		elements := mainFrag.Elements()
+		require.Len(t, elements, 1)
+
+		// Check element 1
+		elem1 := elements[0]
+		require.Equal(t, TestFrBar, elem1.Kind())
+		require.Len(t, elem1.Elements(), 1)
+		lx.CheckCursor(t, elem1.Begin(), 1, 1)
+		lx.CheckCursor(t, elem1.End(), 1, 4)
+	})
+
+	t.Run("Present", func(t *testing.T) {
+		pr := parser.NewParser()
+		lx := NewTestLexer("foo bar")
+		expectedKind := parser.FragmentKind(100)
+		mainFrag, err := pr.Parse(lx, &parser.Rule{
+			Designation: "?foo bar",
+			Pattern: parser.Sequence{
+				parser.Optional{parser.Sequence{
+					testR_foo,
+					parser.Term(TestFrSpace),
+				}},
+				testR_bar,
+			},
+			Kind: expectedKind,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, mainFrag)
+		require.Equal(t, expectedKind, mainFrag.Kind())
+		lx.CheckCursor(t, mainFrag.Begin(), 1, 1)
+		lx.CheckCursor(t, mainFrag.End(), 1, 8)
+
+		// Check elements
+		elements := mainFrag.Elements()
+		require.Len(t, elements, 3)
+
+		// Check element 1
+		elem1 := elements[0]
+		require.Equal(t, TestFrFoo, elem1.Kind())
+		lx.CheckCursor(t, elem1.Begin(), 1, 1)
+		lx.CheckCursor(t, elem1.End(), 1, 4)
+		require.Len(t, elem1.Elements(), 1)
+
+		// Check element 2
+		elem2 := elements[1]
+		require.Equal(t, TestFrSpace, elem2.Kind())
+		lx.CheckCursor(t, elem2.Begin(), 1, 4)
+		lx.CheckCursor(t, elem2.End(), 1, 5)
+		require.Nil(t, elem2.Elements())
+
+		// Check element 3
+		elem3 := elements[2]
+		require.Equal(t, TestFrBar, elem3.Kind())
+		lx.CheckCursor(t, elem3.Begin(), 1, 5)
+		lx.CheckCursor(t, elem3.End(), 1, 8)
+		require.Len(t, elem3.Elements(), 1)
 	})
 }

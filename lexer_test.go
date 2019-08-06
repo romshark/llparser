@@ -12,8 +12,8 @@ const (
 	TestFrSpace
 	TestFrSeq
 	TestFrSep
-	TestFrA
-	TestFrB
+	TestFrFoo
+	TestFrBar
 )
 
 // Basic terminal types
@@ -21,12 +21,12 @@ var (
 	testR_foo = &parser.Rule{
 		Designation: "keyword foo",
 		Pattern:     parser.TermExact("foo"),
-		Kind:        TestFrA,
+		Kind:        TestFrFoo,
 	}
 	testR_bar = &parser.Rule{
 		Designation: "keyword bar",
 		Pattern:     parser.TermExact("bar"),
-		Kind:        TestFrB,
+		Kind:        TestFrBar,
 	}
 )
 

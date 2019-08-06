@@ -66,14 +66,6 @@ func (sc *Scanner) Fragment(kind FragmentKind) Fragment {
 	if len(sc.Records) < 1 {
 		return nil
 	}
-	if len(sc.Records) == 1 {
-		record := sc.Records[0]
-		return &Token{
-			VBegin: record.Begin(),
-			VEnd:   record.End(),
-			VKind:  kind,
-		}
-	}
 	begin := sc.Records[0].Begin()
 	end := sc.Records[len(sc.Records)-1].End()
 	return &Construct{

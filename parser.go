@@ -26,6 +26,7 @@ func (pr Parser) handlePattern(
 	scanner *Scanner,
 	pattern Pattern,
 ) (Fragment, error) {
+	beforeCr := scanner.Lexer.Position()
 	switch pt := pattern.(type) {
 	case *Rule:
 		tk, err := pr.parseRule(scanner.New(), pt)
@@ -54,7 +55,15 @@ func (pr Parser) handlePattern(
 		panic("not yet implemented")
 	case Optional:
 		// Optional
-		panic("not yet implemented")
+		tk, err := pr.handlePattern(scanner, pt.Pattern)
+		if err != nil {
+			if _, ok := err.(*ErrUnexpectedToken); ok {
+				scanner.Lexer.Set(beforeCr)
+				return nil, nil
+			}
+			return nil, err
+		}
+		return tk, nil
 	case Sequence:
 		// Sequence
 		return pr.parseSequence(scanner, pt)
