@@ -45,8 +45,7 @@ func (pr Parser) handlePattern(
 		// Exact terminal
 		return pr.parseTermExact(scanner, pt)
 	case Checked:
-		// Checked terminal
-		panic("not yet implemented")
+		return pr.parseChecked(scanner, pt)
 	case ZeroOrMore:
 		// ZeroOrMore
 		panic("not yet implemented")
@@ -76,6 +75,25 @@ func (pr Parser) handlePattern(
 			reflect.TypeOf(pattern),
 		))
 	}
+}
+
+func (pr Parser) parseChecked(
+	scanner *Scanner,
+	expected Checked,
+) (Fragment, error) {
+	beforeCr := scanner.Lexer.Position()
+	tk, err := scanner.Next()
+	if err != nil {
+		return nil, err
+	}
+	if tk == nil || !expected.Fn(tk.Src()) {
+		return nil, &ErrUnexpectedToken{
+			At:       beforeCr,
+			Expected: expected,
+			Actual:   tk,
+		}
+	}
+	return tk, nil
 }
 
 func (pr Parser) parseSequence(
