@@ -12,7 +12,7 @@ type C struct {
 	column uint
 }
 
-func checkElement(
+func checkFrag(
 	t *testing.T,
 	lexer *TestLexer,
 	frag parser.Fragment,
@@ -49,29 +49,12 @@ func TestParserSequence(t *testing.T) {
 		lx.CheckCursor(t, mainFrag.End(), 1, 10)
 
 		// Check elements
-		elements := mainFrag.Elements()
-		require.Len(t, elements, 3)
+		elems := mainFrag.Elements()
+		require.Len(t, elems, 3)
 
-		// Check element 1
-		elem1 := elements[0]
-		require.Equal(t, TestFrSeq, elem1.Kind())
-		require.Nil(t, elem1.Elements())
-		lx.CheckCursor(t, elem1.Begin(), 1, 1)
-		lx.CheckCursor(t, elem1.End(), 1, 4)
-
-		// Check element 2
-		elem2 := elements[1]
-		require.Equal(t, TestFrSpace, elem2.Kind())
-		require.Nil(t, elem2.Elements())
-		lx.CheckCursor(t, elem2.Begin(), 1, 4)
-		lx.CheckCursor(t, elem2.End(), 1, 7)
-
-		// Check element 3
-		elem3 := elements[2]
-		require.Equal(t, TestFrSeq, elem3.Kind())
-		require.Nil(t, elem3.Elements())
-		lx.CheckCursor(t, elem3.Begin(), 1, 7)
-		lx.CheckCursor(t, elem3.End(), 1, 10)
+		checkFrag(t, lx, elems[0], TestFrSeq, C{1, 1}, C{1, 4}, 0)
+		checkFrag(t, lx, elems[1], TestFrSpace, C{1, 4}, C{1, 7}, 0)
+		checkFrag(t, lx, elems[2], TestFrSeq, C{1, 7}, C{1, 10}, 0)
 	})
 
 	t.Run("TwoLevels", func(t *testing.T) {
@@ -93,29 +76,12 @@ func TestParserSequence(t *testing.T) {
 		lx.CheckCursor(t, mainFrag.End(), 1, 10)
 
 		// Check elements
-		elements := mainFrag.Elements()
-		require.Len(t, elements, 3)
+		elems := mainFrag.Elements()
+		require.Len(t, elems, 3)
 
-		// Check element 1
-		elem1 := elements[0]
-		require.Equal(t, TestFrFoo, elem1.Kind())
-		lx.CheckCursor(t, elem1.Begin(), 1, 1)
-		lx.CheckCursor(t, elem1.End(), 1, 4)
-		require.Len(t, elem1.Elements(), 1)
-
-		// Check element 2
-		elem2 := elements[1]
-		require.Equal(t, TestFrSpace, elem2.Kind())
-		lx.CheckCursor(t, elem2.Begin(), 1, 4)
-		lx.CheckCursor(t, elem2.End(), 1, 7)
-		require.Nil(t, elem2.Elements())
-
-		// Check element 3
-		elem3 := elements[2]
-		require.Equal(t, TestFrBar, elem3.Kind())
-		lx.CheckCursor(t, elem3.Begin(), 1, 7)
-		lx.CheckCursor(t, elem3.End(), 1, 10)
-		require.Len(t, elem3.Elements(), 1)
+		checkFrag(t, lx, elems[0], TestFrFoo, C{1, 1}, C{1, 4}, 1)
+		checkFrag(t, lx, elems[1], TestFrSpace, C{1, 4}, C{1, 7}, 0)
+		checkFrag(t, lx, elems[2], TestFrBar, C{1, 7}, C{1, 10}, 1)
 	})
 }
 
@@ -190,15 +156,10 @@ func TestParserOptionalInSequence(t *testing.T) {
 		lx.CheckCursor(t, mainFrag.End(), 1, 4)
 
 		// Check elements
-		elements := mainFrag.Elements()
-		require.Len(t, elements, 1)
+		elems := mainFrag.Elements()
+		require.Len(t, elems, 1)
 
-		// Check element 1
-		elem1 := elements[0]
-		require.Equal(t, TestFrBar, elem1.Kind())
-		require.Len(t, elem1.Elements(), 1)
-		lx.CheckCursor(t, elem1.Begin(), 1, 1)
-		lx.CheckCursor(t, elem1.End(), 1, 4)
+		checkFrag(t, lx, elems[0], TestFrBar, C{1, 1}, C{1, 4}, 1)
 	})
 
 	t.Run("Present", func(t *testing.T) {
@@ -223,29 +184,12 @@ func TestParserOptionalInSequence(t *testing.T) {
 		lx.CheckCursor(t, mainFrag.End(), 1, 8)
 
 		// Check elements
-		elements := mainFrag.Elements()
-		require.Len(t, elements, 3)
+		elems := mainFrag.Elements()
+		require.Len(t, elems, 3)
 
-		// Check element 1
-		elem1 := elements[0]
-		require.Equal(t, TestFrFoo, elem1.Kind())
-		lx.CheckCursor(t, elem1.Begin(), 1, 1)
-		lx.CheckCursor(t, elem1.End(), 1, 4)
-		require.Len(t, elem1.Elements(), 1)
-
-		// Check element 2
-		elem2 := elements[1]
-		require.Equal(t, TestFrSpace, elem2.Kind())
-		lx.CheckCursor(t, elem2.Begin(), 1, 4)
-		lx.CheckCursor(t, elem2.End(), 1, 5)
-		require.Nil(t, elem2.Elements())
-
-		// Check element 3
-		elem3 := elements[2]
-		require.Equal(t, TestFrBar, elem3.Kind())
-		lx.CheckCursor(t, elem3.Begin(), 1, 5)
-		lx.CheckCursor(t, elem3.End(), 1, 8)
-		require.Len(t, elem3.Elements(), 1)
+		checkFrag(t, lx, elems[0], TestFrFoo, C{1, 1}, C{1, 4}, 1)
+		checkFrag(t, lx, elems[1], TestFrSpace, C{1, 4}, C{1, 5}, 0)
+		checkFrag(t, lx, elems[2], TestFrBar, C{1, 5}, C{1, 8}, 1)
 	})
 }
 
@@ -268,15 +212,10 @@ func TestParserChecked(t *testing.T) {
 	lx.CheckCursor(t, mainFrag.End(), 1, 8)
 
 	// Check elements
-	elements := mainFrag.Elements()
-	require.Len(t, elements, 1)
+	elems := mainFrag.Elements()
+	require.Len(t, elems, 1)
 
-	// Check element 1
-	elem1 := elements[0]
-	require.Equal(t, TestFrSeq, elem1.Kind())
-	lx.CheckCursor(t, elem1.Begin(), 1, 1)
-	lx.CheckCursor(t, elem1.End(), 1, 8)
-	require.Nil(t, elem1.Elements())
+	checkFrag(t, lx, elems[0], TestFrSeq, C{1, 1}, C{1, 8}, 0)
 }
 
 // TestParserCheckedErr tests checked parsing errors
@@ -344,22 +283,11 @@ func TestParserZeroOrMore(t *testing.T) {
 		lx.CheckCursor(t, mainFrag.End(), 1, 5)
 
 		// Check elements
-		elements := mainFrag.Elements()
-		require.Len(t, elements, 2)
+		elems := mainFrag.Elements()
+		require.Len(t, elems, 2)
 
-		// Check element 1
-		elem1 := elements[0]
-		require.Equal(t, TestFrSpace, elem1.Kind())
-		lx.CheckCursor(t, elem1.Begin(), 1, 1)
-		lx.CheckCursor(t, elem1.End(), 1, 2)
-		require.Nil(t, elem1.Elements())
-
-		// Check element 2
-		elem2 := elements[1]
-		require.Equal(t, TestFrFoo, elem2.Kind())
-		lx.CheckCursor(t, elem2.Begin(), 1, 2)
-		lx.CheckCursor(t, elem2.End(), 1, 5)
-		require.Len(t, elem2.Elements(), 1)
+		checkFrag(t, lx, elems[0], TestFrSpace, C{1, 1}, C{1, 2}, 0)
+		checkFrag(t, lx, elems[1], TestFrFoo, C{1, 2}, C{1, 5}, 1)
 	})
 
 	t.Run("Multiple", func(t *testing.T) {
@@ -386,11 +314,11 @@ func TestParserZeroOrMore(t *testing.T) {
 		elements := mainFrag.Elements()
 		require.Len(t, elements, 6)
 
-		checkElement(t, lx, elements[0], TestFrSpace, C{1, 1}, C{1, 2}, 0)
-		checkElement(t, lx, elements[1], TestFrFoo, C{1, 2}, C{1, 5}, 1)
-		checkElement(t, lx, elements[2], TestFrSpace, C{1, 5}, C{1, 6}, 0)
-		checkElement(t, lx, elements[3], TestFrFoo, C{1, 6}, C{1, 9}, 1)
-		checkElement(t, lx, elements[4], TestFrSpace, C{1, 9}, C{1, 10}, 0)
-		checkElement(t, lx, elements[5], TestFrFoo, C{1, 10}, C{1, 13}, 1)
+		checkFrag(t, lx, elements[0], TestFrSpace, C{1, 1}, C{1, 2}, 0)
+		checkFrag(t, lx, elements[1], TestFrFoo, C{1, 2}, C{1, 5}, 1)
+		checkFrag(t, lx, elements[2], TestFrSpace, C{1, 5}, C{1, 6}, 0)
+		checkFrag(t, lx, elements[3], TestFrFoo, C{1, 6}, C{1, 9}, 1)
+		checkFrag(t, lx, elements[4], TestFrSpace, C{1, 9}, C{1, 10}, 0)
+		checkFrag(t, lx, elements[5], TestFrFoo, C{1, 10}, C{1, 13}, 1)
 	})
 }
