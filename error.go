@@ -24,6 +24,13 @@ func (err *ErrUnexpectedToken) Error() string {
 	if err.Actual != nil {
 		actualStr = err.Actual.Src()
 	}
+	if err.Expected == nil {
+		return fmt.Sprintf(
+			"unexpected token '%s' at %s",
+			actualStr,
+			err.At,
+		)
+	}
 	return fmt.Sprintf(
 		"unexpected token '%s', expected {%s} at %s",
 		actualStr,
