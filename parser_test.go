@@ -66,7 +66,8 @@ func TestParserSequence(t *testing.T) {
 			Pattern: parser.Sequence{
 				testR_foo,
 				parser.Term(TestFrSpace),
-				testR_bar},
+				testR_bar,
+			},
 			Kind: expectedKind,
 		})
 		require.NoError(t, err)
