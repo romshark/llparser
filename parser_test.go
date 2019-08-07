@@ -242,26 +242,6 @@ func TestParserCheckedErr(t *testing.T) {
 }
 
 func TestParserZeroOrMore(t *testing.T) {
-	t.Run("NoneErr", func(t *testing.T) {
-		pr := parser.NewParser()
-		lx := NewTestLexer(" foo ")
-		expectedKind := parser.FragmentKind(100)
-		mainFrag, err := pr.Parse(lx, &parser.Rule{
-			Designation: "(space foo)*",
-			Pattern: parser.ZeroOrMore{
-				parser.Sequence{
-					parser.Term(TestFrSpace),
-					testR_foo,
-				},
-			},
-			Kind: expectedKind,
-		})
-
-		require.Error(t, err)
-		require.Equal(t, "unexpected token ' ' at test.txt:1:5", err.Error())
-		require.Nil(t, mainFrag)
-	})
-
 	t.Run("None", func(t *testing.T) {
 		pr := parser.NewParser()
 		lx := NewTestLexer("foo")
@@ -431,4 +411,19 @@ func TestParserOneOrMore(t *testing.T) {
 		checkFrag(t, lx, elements[4], TestFrSpace, C{1, 9}, C{1, 10}, 0)
 		checkFrag(t, lx, elements[5], TestFrFoo, C{1, 10}, C{1, 13}, 1)
 	})
+}
+
+func TestParserSuperfluousInput(t *testing.T) {
+	pr := parser.NewParser()
+	lx := NewTestLexer("foo ")
+	expectedKind := parser.FragmentKind(100)
+	mainFrag, err := pr.Parse(lx, &parser.Rule{
+		Designation: "single foo",
+		Pattern:     testR_foo,
+		Kind:        expectedKind,
+	})
+
+	require.Error(t, err)
+	require.Equal(t, "unexpected token ' ' at test.txt:1:4", err.Error())
+	require.Nil(t, mainFrag)
 }
