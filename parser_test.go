@@ -7,6 +7,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type C struct {
+	line   uint
+	column uint
+}
+
+func checkElement(
+	t *testing.T,
+	lexer *TestLexer,
+	frag parser.Fragment,
+	kind parser.FragmentKind,
+	begin C,
+	end C,
+	elements int,
+) {
+	require.Equal(t, kind, frag.Kind())
+	lexer.CheckCursor(t, frag.Begin(), begin.line, begin.column)
+	lexer.CheckCursor(t, frag.End(), end.line, end.column)
+	require.Len(t, frag.Elements(), elements)
+}
+
 func TestParserSequence(t *testing.T) {
 	t.Run("SingleLevel", func(t *testing.T) {
 		pr := parser.NewParser()
@@ -340,5 +360,37 @@ func TestParserZeroOrMore(t *testing.T) {
 		lx.CheckCursor(t, elem2.Begin(), 1, 2)
 		lx.CheckCursor(t, elem2.End(), 1, 5)
 		require.Len(t, elem2.Elements(), 1)
+	})
+
+	t.Run("Multiple", func(t *testing.T) {
+		pr := parser.NewParser()
+		lx := NewTestLexer(" foo foo foo")
+		expectedKind := parser.FragmentKind(100)
+		mainFrag, err := pr.Parse(lx, &parser.Rule{
+			Designation: "(space foo)*",
+			Pattern: parser.ZeroOrMore{
+				parser.Sequence{
+					parser.Term(TestFrSpace),
+					testR_foo,
+				},
+			},
+			Kind: expectedKind,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, mainFrag)
+		require.Equal(t, expectedKind, mainFrag.Kind())
+		lx.CheckCursor(t, mainFrag.Begin(), 1, 1)
+		lx.CheckCursor(t, mainFrag.End(), 1, 13)
+
+		// Check elements
+		elements := mainFrag.Elements()
+		require.Len(t, elements, 6)
+
+		checkElement(t, lx, elements[0], TestFrSpace, C{1, 1}, C{1, 2}, 0)
+		checkElement(t, lx, elements[1], TestFrFoo, C{1, 2}, C{1, 5}, 1)
+		checkElement(t, lx, elements[2], TestFrSpace, C{1, 5}, C{1, 6}, 0)
+		checkElement(t, lx, elements[3], TestFrFoo, C{1, 6}, C{1, 9}, 1)
+		checkElement(t, lx, elements[4], TestFrSpace, C{1, 9}, C{1, 10}, 0)
+		checkElement(t, lx, elements[5], TestFrFoo, C{1, 10}, C{1, 13}, 1)
 	})
 }
