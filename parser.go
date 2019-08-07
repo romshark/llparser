@@ -226,5 +226,24 @@ func (pr Parser) Parse(lexer Lexer, rule *Rule) (Fragment, error) {
 	if lexer == nil {
 		return nil, errors.New("missing lexer while parsing")
 	}
-	return pr.parseRule(NewScanner(lexer), rule)
+	mainFrag, err := pr.parseRule(NewScanner(lexer), rule)
+	if err != nil {
+		return nil, err
+	}
+
+	// Ensure EOF
+	before := lexer.Position()
+	last, err := lexer.Next()
+	if err != nil {
+		return nil, err
+	}
+	if last != nil {
+		return nil, &ErrUnexpectedToken{
+			At:       before,
+			Expected: nil,
+			Actual:   last,
+		}
+	}
+
+	return mainFrag, nil
 }
