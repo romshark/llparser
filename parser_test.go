@@ -322,3 +322,90 @@ func TestParserZeroOrMore(t *testing.T) {
 		checkFrag(t, lx, elements[5], TestFrFoo, C{1, 10}, C{1, 13}, 1)
 	})
 }
+
+func TestParserOneOrMore(t *testing.T) {
+	t.Run("None", func(t *testing.T) {
+		pr := parser.NewParser()
+		lx := NewTestLexer("foo")
+		expectedKind := parser.FragmentKind(100)
+		mainFrag, err := pr.Parse(lx, &parser.Rule{
+			Designation: "(space foo)*",
+			Pattern: parser.OneOrMore{
+				parser.Sequence{
+					parser.Term(TestFrSpace),
+					testR_foo,
+				},
+			},
+			Kind: expectedKind,
+		})
+
+		require.Error(t, err)
+		require.Equal(
+			t,
+			"unexpected token 'foo', "+
+				"expected {terminal(1)} at test.txt:1:1",
+			err.Error(),
+		)
+		require.Nil(t, mainFrag)
+	})
+
+	t.Run("One", func(t *testing.T) {
+		pr := parser.NewParser()
+		lx := NewTestLexer(" foo")
+		expectedKind := parser.FragmentKind(100)
+		mainFrag, err := pr.Parse(lx, &parser.Rule{
+			Designation: "(space foo)*",
+			Pattern: parser.ZeroOrMore{
+				parser.Sequence{
+					parser.Term(TestFrSpace),
+					testR_foo,
+				},
+			},
+			Kind: expectedKind,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, mainFrag)
+		require.Equal(t, expectedKind, mainFrag.Kind())
+		lx.CheckCursor(t, mainFrag.Begin(), 1, 1)
+		lx.CheckCursor(t, mainFrag.End(), 1, 5)
+
+		// Check elements
+		elems := mainFrag.Elements()
+		require.Len(t, elems, 2)
+
+		checkFrag(t, lx, elems[0], TestFrSpace, C{1, 1}, C{1, 2}, 0)
+		checkFrag(t, lx, elems[1], TestFrFoo, C{1, 2}, C{1, 5}, 1)
+	})
+
+	t.Run("Multiple", func(t *testing.T) {
+		pr := parser.NewParser()
+		lx := NewTestLexer(" foo foo foo")
+		expectedKind := parser.FragmentKind(100)
+		mainFrag, err := pr.Parse(lx, &parser.Rule{
+			Designation: "(space foo)*",
+			Pattern: parser.OneOrMore{
+				parser.Sequence{
+					parser.Term(TestFrSpace),
+					testR_foo,
+				},
+			},
+			Kind: expectedKind,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, mainFrag)
+		require.Equal(t, expectedKind, mainFrag.Kind())
+		lx.CheckCursor(t, mainFrag.Begin(), 1, 1)
+		lx.CheckCursor(t, mainFrag.End(), 1, 13)
+
+		// Check elements
+		elements := mainFrag.Elements()
+		require.Len(t, elements, 6)
+
+		checkFrag(t, lx, elements[0], TestFrSpace, C{1, 1}, C{1, 2}, 0)
+		checkFrag(t, lx, elements[1], TestFrFoo, C{1, 2}, C{1, 5}, 1)
+		checkFrag(t, lx, elements[2], TestFrSpace, C{1, 5}, C{1, 6}, 0)
+		checkFrag(t, lx, elements[3], TestFrFoo, C{1, 6}, C{1, 9}, 1)
+		checkFrag(t, lx, elements[4], TestFrSpace, C{1, 9}, C{1, 10}, 0)
+		checkFrag(t, lx, elements[5], TestFrFoo, C{1, 10}, C{1, 13}, 1)
+	})
+}
