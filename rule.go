@@ -2,7 +2,7 @@ package parser
 
 // Action represents a callback function that's called when a certain
 // fragment is matched
-type Action func(Fragment)
+type Action func(Fragment) error
 
 // Rule represents a grammatic rule
 type Rule struct {

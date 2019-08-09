@@ -257,7 +257,16 @@ func (pr Parser) parseRule(
 	if !rule.Pattern.Container() {
 		scanner.Append(rule.Pattern, frag)
 	}
-	return scanner.Fragment(rule.Kind), nil
+	composedFrag := scanner.Fragment(rule.Kind)
+
+	if rule.Action != nil {
+		// Execute rule action callback
+		if err := rule.Action(composedFrag); err != nil {
+			return nil, err
+		}
+	}
+
+	return composedFrag, nil
 }
 
 // Parse parses the given rule
