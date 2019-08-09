@@ -437,3 +437,74 @@ func TestParserSuperfluousInput(t *testing.T) {
 	require.Equal(t, "unexpected token ' ' at test.txt:1:4", err.Error())
 	require.Nil(t, mainFrag)
 }
+
+func TestParserEither(t *testing.T) {
+	t.Run("Neither", func(t *testing.T) {
+		pr := parser.NewParser()
+		lx := NewTestLexer("  ")
+		expectedKind := parser.FragmentKind(100)
+		mainFrag, err := pr.Parse(lx, &parser.Rule{
+			Designation: "(Foo / Bar)",
+			Pattern: parser.Either{
+				testR_foo,
+				testR_bar,
+			},
+			Kind: expectedKind,
+		})
+
+		require.Error(t, err)
+		require.Equal(
+			t,
+			"unexpected token '  ', expected {either of "+
+				"[keyword foo, keyword bar]} at test.txt:1:1",
+			err.Error(),
+		)
+		require.Nil(t, mainFrag)
+	})
+
+	t.Run("First", func(t *testing.T) {
+		pr := parser.NewParser()
+		lx := NewTestLexer("foo")
+		expectedKind := parser.FragmentKind(100)
+		mainFrag, err := pr.Parse(lx, &parser.Rule{
+			Designation: "(Foo / Bar)",
+			Pattern: parser.Either{
+				testR_foo,
+				testR_bar,
+			},
+			Kind: expectedKind,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, mainFrag)
+		checkFrag(t, lx, mainFrag, expectedKind, C{1, 1}, C{1, 4}, 1)
+
+		// Check elements
+		elements := mainFrag.Elements()
+		require.Len(t, elements, 1)
+
+		checkFrag(t, lx, elements[0], TestFrFoo, C{1, 1}, C{1, 4}, 1)
+	})
+
+	t.Run("Second", func(t *testing.T) {
+		pr := parser.NewParser()
+		lx := NewTestLexer("bar")
+		expectedKind := parser.FragmentKind(100)
+		mainFrag, err := pr.Parse(lx, &parser.Rule{
+			Designation: "(Foo / Bar)",
+			Pattern: parser.Either{
+				testR_foo,
+				testR_bar,
+			},
+			Kind: expectedKind,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, mainFrag)
+		checkFrag(t, lx, mainFrag, expectedKind, C{1, 1}, C{1, 4}, 1)
+
+		// Check elements
+		elements := mainFrag.Elements()
+		require.Len(t, elements, 1)
+
+		checkFrag(t, lx, elements[0], TestFrBar, C{1, 1}, C{1, 4}, 1)
+	})
+}
