@@ -256,14 +256,23 @@ func TestParserZeroOrMore(t *testing.T) {
 						testR_foo,
 					},
 				},
-				parser.Optional{testR_foo},
+				parser.Optional{&parser.Rule{
+					Designation: "?foo",
+					Pattern:     testR_foo,
+					Kind:        200,
+				}},
 			},
 			Kind: expectedKind,
 		})
 
 		require.NoError(t, err)
 		require.NotNil(t, mainFrag)
-		require.Len(t, mainFrag.Elements(), 0)
+		require.Len(t, mainFrag.Elements(), 1)
+
+		// Check elements
+		elems := mainFrag.Elements()
+
+		checkFrag(t, lx, elems[0], 200, C{1, 1}, C{1, 4}, 1)
 	})
 
 	t.Run("One", func(t *testing.T) {

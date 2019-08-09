@@ -12,6 +12,9 @@ type Rule struct {
 	Action      Action
 }
 
+// Container implements the Pattern interface
+func (*Rule) Container() bool { return false }
+
 // TerminalPattern implements the Pattern interface
 func (rl *Rule) TerminalPattern() Pattern { return rl.Pattern }
 

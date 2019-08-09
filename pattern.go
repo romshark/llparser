@@ -7,6 +7,9 @@ import (
 
 // Pattern represents an abstract pattern
 type Pattern interface {
+	// Container returns true for container patterns
+	Container() bool
+
 	// TerminalPattern returns the terminal pattern for composite patterns
 	// and nil for non-terminal patterns
 	TerminalPattern() Pattern
@@ -18,6 +21,9 @@ type Pattern interface {
 // Term represents a concrete terminal token pattern
 type Term FragmentKind
 
+// Container implements the Pattern interface
+func (Term) Container() bool { return false }
+
 // TerminalPattern implements the Pattern interface
 func (Term) TerminalPattern() Pattern { return nil }
 
@@ -28,6 +34,9 @@ func (tm Term) Desig() string {
 
 // TermExact represents an exact terminal token pattern
 type TermExact string
+
+// Container implements the Pattern interface
+func (TermExact) Container() bool { return false }
 
 // TerminalPattern implements the Pattern interface
 func (TermExact) TerminalPattern() Pattern { return nil }
@@ -41,6 +50,9 @@ type Checked struct {
 	Fn          func(string) bool
 }
 
+// Container implements the Pattern interface
+func (Checked) Container() bool { return false }
+
 // TerminalPattern implements the Pattern interface
 func (Checked) TerminalPattern() Pattern { return nil }
 
@@ -50,14 +62,20 @@ func (ck Checked) Desig() string { return ck.Designation }
 // Optional represents an arbitrary optional pattern
 type Optional struct{ Pattern }
 
+// Container implements the Pattern interface
+func (Optional) Container() bool { return true }
+
 // TerminalPattern implements the Pattern interface
-func (opt Optional) TerminalPattern() Pattern { return Pattern(opt) }
+func (opt Optional) TerminalPattern() Pattern { return opt.Pattern }
 
 // Desig implements the Pattern interface
 func (opt Optional) Desig() string { return opt.Pattern.Desig() }
 
 // Sequence represents an exact sequence of arbitrary patterns
 type Sequence []Pattern
+
+// Container implements the Pattern interface
+func (Sequence) Container() bool { return true }
 
 // TerminalPattern implements the Pattern interface
 func (Sequence) TerminalPattern() Pattern { return nil }
@@ -74,8 +92,11 @@ func (seq Sequence) Desig() string {
 // ZeroOrMore represents zero or more arbitrary patterns
 type ZeroOrMore struct{ Pattern }
 
+// Container implements the Pattern interface
+func (ZeroOrMore) Container() bool { return true }
+
 // TerminalPattern implements the Pattern interface
-func (zom ZeroOrMore) TerminalPattern() Pattern { return Pattern(zom) }
+func (zom ZeroOrMore) TerminalPattern() Pattern { return zom.Pattern }
 
 // Desig implements the Pattern interface
 func (zom ZeroOrMore) Desig() string {
@@ -85,8 +106,11 @@ func (zom ZeroOrMore) Desig() string {
 // OneOrMore represents at least one arbitrary patterns
 type OneOrMore struct{ Pattern }
 
+// Container implements the Pattern interface
+func (OneOrMore) Container() bool { return true }
+
 // TerminalPattern implements the Pattern interface
-func (oom OneOrMore) TerminalPattern() Pattern { return Pattern(oom) }
+func (oom OneOrMore) TerminalPattern() Pattern { return oom.Pattern }
 
 // Desig implements the Pattern interface
 func (oom OneOrMore) Desig() string {
@@ -95,6 +119,9 @@ func (oom OneOrMore) Desig() string {
 
 // Either represents either of the arbitrary patterns
 type Either []Pattern
+
+// Container implements the Pattern interface
+func (Either) Container() bool { return true }
 
 // TerminalPattern implements the Pattern interface
 func (Either) TerminalPattern() Pattern { return nil }

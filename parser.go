@@ -92,7 +92,7 @@ func (pr Parser) parseOptional(
 	pattern Pattern,
 ) (Fragment, error) {
 	beforeCr := scanner.Lexer.Position()
-	tk, err := pr.handlePattern(scanner, pattern)
+	frag, err := pr.handlePattern(scanner, pattern)
 	if err != nil {
 		if _, ok := err.(*ErrUnexpectedToken); ok {
 			// Reset scanner to the initial position
@@ -101,7 +101,11 @@ func (pr Parser) parseOptional(
 		}
 		return nil, err
 	}
-	return tk, nil
+	// Append rule patterns, other patterns are appended automatically
+	if !pattern.Container() {
+		scanner.Append(pattern, frag)
+	}
+	return frag, nil
 }
 
 func (pr Parser) parseZeroOrMore(
@@ -121,8 +125,8 @@ func (pr Parser) parseZeroOrMore(
 		}
 		lastPosition = scanner.Lexer.Position()
 		// Append rule patterns, other patterns are appended automatically
-		if _, isRule := pattern.(*Rule); isRule {
-			scanner.Append(frag)
+		if !pattern.Container() {
+			scanner.Append(pattern, frag)
 		}
 	}
 }
@@ -149,8 +153,8 @@ func (pr Parser) parseOneOrMore(
 		num++
 		lastPosition = scanner.Lexer.Position()
 		// Append rule patterns, other patterns are appended automatically
-		if _, isRule := pattern.(*Rule); isRule {
-			scanner.Append(frag)
+		if !pattern.Container() {
+			scanner.Append(pattern, frag)
 		}
 	}
 }
@@ -165,8 +169,8 @@ func (pr Parser) parseSequence(
 			return nil, err
 		}
 		// Append rule patterns, other patterns are appended automatically
-		if _, isRule := pt.(*Rule); isRule {
-			scanner.Append(frag)
+		if !pt.Container() {
+			scanner.Append(pt, frag)
 		}
 	}
 	return nil, nil
@@ -216,7 +220,10 @@ func (pr Parser) parseRule(
 ) (Fragment, error) {
 	frag, err := pr.handlePattern(scanner, rule.Pattern)
 	if err != nil {
-		return frag, err
+		return nil, err
+	}
+	if !rule.Pattern.Container() {
+		scanner.Append(rule.Pattern, frag)
 	}
 	return scanner.Fragment(rule.Kind), nil
 }

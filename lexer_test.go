@@ -59,13 +59,13 @@ func (lx *TestLexer) CheckCursor(
 	column uint,
 ) {
 	require.Equal(t, lx.cr.File, cursor.File)
+	require.Equal(t, line, cursor.Line)
+	require.Equal(t, column, cursor.Column)
 	if column > 1 || line > 1 {
 		require.True(t, cursor.Index > 0)
 	} else if column == 1 && line == 1 {
 		require.Equal(t, uint(0), cursor.Index)
 	}
-	require.Equal(t, line, cursor.Line)
-	require.Equal(t, column, cursor.Column)
 }
 
 func finalizedToken(

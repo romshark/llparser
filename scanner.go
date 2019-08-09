@@ -26,22 +26,6 @@ func (sc *Scanner) New() *Scanner {
 	return &Scanner{Lexer: sc.Lexer}
 }
 
-// Back moves the scanner back in the recorded history
-func (sc *Scanner) Back(steps uint) {
-	reci := uint(len(sc.Records))
-	if reci < 1 {
-		return
-	}
-	if steps >= uint(len(sc.Records)) {
-		sc.Records = nil
-		sc.Lexer.Set(NewCursor(sc.Lexer.Position().File))
-		return
-	}
-	sc.Records = sc.Records[:reci-steps]
-	last := sc.Records[len(sc.Records)-1].End()
-	sc.Lexer.Set(last)
-}
-
 // Next advances the scanner by 1 token returning either the read fragment
 // or an error if the lexer failed
 func (sc *Scanner) Next() (*Token, error) {
@@ -57,8 +41,23 @@ func (sc *Scanner) Next() (*Token, error) {
 }
 
 // Append appends a fragment to the records
-func (sc *Scanner) Append(fragment Fragment) {
-	sc.Records = append(sc.Records, fragment)
+func (sc *Scanner) Append(
+	pattern Pattern,
+	fragment Fragment,
+) {
+	if fragment == nil {
+		return
+	}
+	if _, ok := pattern.(*Rule); ok {
+		sc.Records = append(sc.Records, fragment)
+		return
+	}
+	termPt := pattern.TerminalPattern()
+	if termPt != nil {
+		if _, ok := termPt.(*Rule); ok {
+			sc.Records = append(sc.Records, fragment)
+		}
+	}
 }
 
 // Fragment returns a typed composite fragment
