@@ -1,6 +1,7 @@
 package parser_test
 
 import (
+	"errors"
 	"testing"
 
 	parser "github.com/romshark/llparser"
@@ -507,4 +508,73 @@ func TestParserRecursiveRule(t *testing.T) {
 	elems3 := elems2[2].Elements()
 	checkFrag(t, lx, elems3[0], TestFrFoo, C{1, 9}, C{1, 12}, 1)
 	checkFrag(t, lx, elems3[1], TestFrSep, C{1, 12}, C{1, 13}, 0)
+}
+
+func TestParserAction(t *testing.T) {
+	pr := parser.NewParser()
+
+	aFrags := make([]parser.Fragment, 0, 2)
+	bFrags := make([]parser.Fragment, 0, 2)
+
+	lx := NewTestLexer("a,b,b,a,")
+	aKind := parser.FragmentKind(905)
+	ruleA := &parser.Rule{
+		Designation: "a",
+		Kind:        aKind,
+		Pattern:     parser.TermExact("a"),
+		Action: func(f parser.Fragment) error {
+			aFrags = append(aFrags, f)
+			return nil
+		},
+	}
+	bKind := parser.FragmentKind(906)
+	ruleB := &parser.Rule{
+		Designation: "b",
+		Kind:        bKind,
+		Pattern:     parser.TermExact("b"),
+		Action: func(f parser.Fragment) error {
+			bFrags = append(bFrags, f)
+			return nil
+		},
+	}
+	mainFrag, err := pr.Parse(lx, &parser.Rule{
+		Designation: "list",
+		Pattern: parser.OneOrMore{&parser.Rule{
+			Designation: "list item",
+			Pattern: parser.Sequence{
+				parser.Either{ruleA, ruleB},
+				parser.Term(TestFrSep),
+			},
+		}},
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, mainFrag)
+
+	require.Len(t, aFrags, 2)
+	checkFrag(t, lx, aFrags[0], aKind, C{1, 1}, C{1, 2}, 1)
+	checkFrag(t, lx, aFrags[1], aKind, C{1, 7}, C{1, 8}, 1)
+
+	require.Len(t, bFrags, 2)
+	checkFrag(t, lx, bFrags[0], bKind, C{1, 3}, C{1, 4}, 1)
+	checkFrag(t, lx, bFrags[1], bKind, C{1, 5}, C{1, 6}, 1)
+}
+
+func TestParserActionErr(t *testing.T) {
+	pr := parser.NewParser()
+	lx := NewTestLexer("a")
+
+	expectedErr := errors.New("custom error")
+	mainFrag, err := pr.Parse(lx, &parser.Rule{
+		Designation: "a",
+		Kind:        900,
+		Pattern:     parser.TermExact("a"),
+		Action: func(f parser.Fragment) error {
+			return expectedErr
+		},
+	})
+
+	require.Error(t, err)
+	require.Equal(t, expectedErr, err)
+	require.Nil(t, mainFrag)
 }
