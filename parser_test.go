@@ -43,14 +43,10 @@ func TestParserSequence(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		require.NotNil(t, mainFrag)
-		require.Equal(t, expectedKind, mainFrag.Kind())
-		lx.CheckCursor(t, mainFrag.Begin(), 1, 1)
-		lx.CheckCursor(t, mainFrag.End(), 1, 10)
+		checkFrag(t, lx, mainFrag, expectedKind, C{1, 1}, C{1, 10}, 3)
 
 		// Check elements
 		elems := mainFrag.Elements()
-		require.Len(t, elems, 3)
 
 		checkFrag(t, lx, elems[0], TestFrSeq, C{1, 1}, C{1, 4}, 0)
 		checkFrag(t, lx, elems[1], TestFrSpace, C{1, 4}, C{1, 7}, 0)
@@ -71,14 +67,10 @@ func TestParserSequence(t *testing.T) {
 			Kind: expectedKind,
 		})
 		require.NoError(t, err)
-		require.NotNil(t, mainFrag)
-		require.Equal(t, expectedKind, mainFrag.Kind())
-		lx.CheckCursor(t, mainFrag.Begin(), 1, 1)
-		lx.CheckCursor(t, mainFrag.End(), 1, 10)
+		checkFrag(t, lx, mainFrag, expectedKind, C{1, 1}, C{1, 10}, 3)
 
 		// Check elements
 		elems := mainFrag.Elements()
-		require.Len(t, elems, 3)
 
 		checkFrag(t, lx, elems[0], TestFrFoo, C{1, 1}, C{1, 4}, 1)
 		checkFrag(t, lx, elems[1], TestFrSpace, C{1, 4}, C{1, 7}, 0)
@@ -151,14 +143,10 @@ func TestParserOptionalInSequence(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		require.NotNil(t, mainFrag)
-		require.Equal(t, expectedKind, mainFrag.Kind())
-		lx.CheckCursor(t, mainFrag.Begin(), 1, 1)
-		lx.CheckCursor(t, mainFrag.End(), 1, 4)
+		checkFrag(t, lx, mainFrag, expectedKind, C{1, 1}, C{1, 4}, 1)
 
 		// Check elements
 		elems := mainFrag.Elements()
-		require.Len(t, elems, 1)
 
 		checkFrag(t, lx, elems[0], TestFrBar, C{1, 1}, C{1, 4}, 1)
 	})
@@ -179,14 +167,10 @@ func TestParserOptionalInSequence(t *testing.T) {
 			Kind: expectedKind,
 		})
 		require.NoError(t, err)
-		require.NotNil(t, mainFrag)
-		require.Equal(t, expectedKind, mainFrag.Kind())
-		lx.CheckCursor(t, mainFrag.Begin(), 1, 1)
-		lx.CheckCursor(t, mainFrag.End(), 1, 8)
+		checkFrag(t, lx, mainFrag, expectedKind, C{1, 1}, C{1, 8}, 3)
 
 		// Check elements
 		elems := mainFrag.Elements()
-		require.Len(t, elems, 3)
 
 		checkFrag(t, lx, elems[0], TestFrFoo, C{1, 1}, C{1, 4}, 1)
 		checkFrag(t, lx, elems[1], TestFrSpace, C{1, 4}, C{1, 5}, 0)
@@ -207,14 +191,10 @@ func TestParserChecked(t *testing.T) {
 	})
 
 	require.NoError(t, err)
-	require.NotNil(t, mainFrag)
-	require.Equal(t, expectedKind, mainFrag.Kind())
-	lx.CheckCursor(t, mainFrag.Begin(), 1, 1)
-	lx.CheckCursor(t, mainFrag.End(), 1, 8)
+	checkFrag(t, lx, mainFrag, expectedKind, C{1, 1}, C{1, 8}, 1)
 
 	// Check elements
 	elems := mainFrag.Elements()
-	require.Len(t, elems, 1)
 
 	checkFrag(t, lx, elems[0], TestFrSeq, C{1, 1}, C{1, 8}, 0)
 }
@@ -266,8 +246,7 @@ func TestParserZeroOrMore(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		require.NotNil(t, mainFrag)
-		require.Len(t, mainFrag.Elements(), 1)
+		checkFrag(t, lx, mainFrag, expectedKind, C{1, 1}, C{1, 4}, 1)
 
 		// Check elements
 		elems := mainFrag.Elements()
@@ -290,14 +269,10 @@ func TestParserZeroOrMore(t *testing.T) {
 			Kind: expectedKind,
 		})
 		require.NoError(t, err)
-		require.NotNil(t, mainFrag)
-		require.Equal(t, expectedKind, mainFrag.Kind())
-		lx.CheckCursor(t, mainFrag.Begin(), 1, 1)
-		lx.CheckCursor(t, mainFrag.End(), 1, 5)
+		checkFrag(t, lx, mainFrag, expectedKind, C{1, 1}, C{1, 5}, 2)
 
 		// Check elements
 		elems := mainFrag.Elements()
-		require.Len(t, elems, 2)
 
 		checkFrag(t, lx, elems[0], TestFrSpace, C{1, 1}, C{1, 2}, 0)
 		checkFrag(t, lx, elems[1], TestFrFoo, C{1, 2}, C{1, 5}, 1)
@@ -318,14 +293,10 @@ func TestParserZeroOrMore(t *testing.T) {
 			Kind: expectedKind,
 		})
 		require.NoError(t, err)
-		require.NotNil(t, mainFrag)
-		require.Equal(t, expectedKind, mainFrag.Kind())
-		lx.CheckCursor(t, mainFrag.Begin(), 1, 1)
-		lx.CheckCursor(t, mainFrag.End(), 1, 13)
+		checkFrag(t, lx, mainFrag, expectedKind, C{1, 1}, C{1, 13}, 6)
 
 		// Check elements
 		elements := mainFrag.Elements()
-		require.Len(t, elements, 6)
 
 		checkFrag(t, lx, elements[0], TestFrSpace, C{1, 1}, C{1, 2}, 0)
 		checkFrag(t, lx, elements[1], TestFrFoo, C{1, 2}, C{1, 5}, 1)
@@ -377,14 +348,10 @@ func TestParserOneOrMore(t *testing.T) {
 			Kind: expectedKind,
 		})
 		require.NoError(t, err)
-		require.NotNil(t, mainFrag)
-		require.Equal(t, expectedKind, mainFrag.Kind())
-		lx.CheckCursor(t, mainFrag.Begin(), 1, 1)
-		lx.CheckCursor(t, mainFrag.End(), 1, 5)
+		checkFrag(t, lx, mainFrag, expectedKind, C{1, 1}, C{1, 5}, 2)
 
 		// Check elements
 		elems := mainFrag.Elements()
-		require.Len(t, elems, 2)
 
 		checkFrag(t, lx, elems[0], TestFrSpace, C{1, 1}, C{1, 2}, 0)
 		checkFrag(t, lx, elems[1], TestFrFoo, C{1, 2}, C{1, 5}, 1)
@@ -406,14 +373,10 @@ func TestParserOneOrMore(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.NotNil(t, mainFrag)
-		require.Equal(t, expectedKind, mainFrag.Kind())
-		lx.CheckCursor(t, mainFrag.Begin(), 1, 1)
-		lx.CheckCursor(t, mainFrag.End(), 1, 13)
+		checkFrag(t, lx, mainFrag, expectedKind, C{1, 1}, C{1, 13}, 6)
 
 		// Check elements
 		elements := mainFrag.Elements()
-		require.Len(t, elements, 6)
-
 		checkFrag(t, lx, elements[0], TestFrSpace, C{1, 1}, C{1, 2}, 0)
 		checkFrag(t, lx, elements[1], TestFrFoo, C{1, 2}, C{1, 5}, 1)
 		checkFrag(t, lx, elements[2], TestFrSpace, C{1, 5}, C{1, 6}, 0)
