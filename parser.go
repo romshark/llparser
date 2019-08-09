@@ -59,7 +59,7 @@ func (pr Parser) handlePattern(
 		return pr.parseSequence(scanner, pt)
 	case Either:
 		// Choice
-		panic("not yet implemented")
+		return pr.parseEither(scanner, pt)
 	default:
 		panic(fmt.Errorf(
 			"unsupported pattern type: %s",
@@ -161,7 +161,7 @@ func (pr Parser) parseOneOrMore(
 
 func (pr Parser) parseSequence(
 	scanner *Scanner,
-	patterns []Pattern,
+	patterns Sequence,
 ) (Fragment, error) {
 	for _, pt := range patterns {
 		frag, err := pr.handlePattern(scanner, pt)
@@ -172,6 +172,38 @@ func (pr Parser) parseSequence(
 		if !pt.Container() {
 			scanner.Append(pt, frag)
 		}
+	}
+	return nil, nil
+}
+
+func (pr Parser) parseEither(
+	scanner *Scanner,
+	patternOptions Either,
+) (Fragment, error) {
+	beforeCr := scanner.Lexer.Position()
+	for ix, pt := range patternOptions {
+		lastOption := ix >= len(patternOptions)-1
+
+		frag, err := pr.handlePattern(scanner, pt)
+		if err != nil {
+			if er, ok := err.(*ErrUnexpectedToken); ok {
+				if lastOption {
+					// Set actual expected pattern
+					er.Expected = patternOptions
+				} else {
+					// Reset scanner to the initial position
+					scanner.Lexer.Set(beforeCr)
+					// Continue checking other options
+					continue
+				}
+			}
+			return nil, err
+		}
+		// Append rule patterns, other patterns are appended automatically
+		if !pt.Container() {
+			scanner.Append(pt, frag)
+		}
+		return frag, nil
 	}
 	return nil, nil
 }
