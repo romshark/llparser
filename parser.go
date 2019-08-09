@@ -140,10 +140,11 @@ func (pr Parser) parseOneOrMore(
 	for {
 		frag, err := pr.handlePattern(scanner, pattern)
 		if err != nil {
-			if num < 1 {
-				return nil, err
-			}
 			if _, ok := err.(*ErrUnexpectedToken); ok {
+				if num < 1 {
+					// No matches so far but already a mismatch
+					return nil, err
+				}
 				// Reset scanner to the last match
 				scanner.Set(lastPosition)
 				return nil, nil
