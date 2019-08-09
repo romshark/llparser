@@ -471,3 +471,40 @@ func TestParserEither(t *testing.T) {
 		checkFrag(t, lx, elements[0], TestFrBar, C{1, 1}, C{1, 4}, 1)
 	})
 }
+
+func TestParserRecursiveRule(t *testing.T) {
+	pr := parser.NewParser()
+	lx := NewTestLexer("foo,foo,foo,")
+	expectedKind := parser.FragmentKind(100)
+	recursiveRule := &parser.Rule{
+		Designation: "recursive",
+		Kind:        expectedKind,
+	}
+	recursiveRule.Pattern = parser.Sequence{
+		testR_foo,
+		parser.Term(TestFrSep),
+		parser.Optional{recursiveRule},
+	}
+	mainFrag, err := pr.Parse(lx, recursiveRule)
+
+	require.NoError(t, err)
+	checkFrag(t, lx, mainFrag, expectedKind, C{1, 1}, C{1, 13}, 3)
+
+	// First level
+	elems := mainFrag.Elements()
+
+	checkFrag(t, lx, elems[0], TestFrFoo, C{1, 1}, C{1, 4}, 1)
+	checkFrag(t, lx, elems[1], TestFrSep, C{1, 4}, C{1, 5}, 0)
+	checkFrag(t, lx, elems[2], expectedKind, C{1, 5}, C{1, 13}, 3)
+
+	// Second levels
+	elems2 := elems[2].Elements()
+	checkFrag(t, lx, elems2[0], TestFrFoo, C{1, 5}, C{1, 8}, 1)
+	checkFrag(t, lx, elems2[1], TestFrSep, C{1, 8}, C{1, 9}, 0)
+	checkFrag(t, lx, elems2[2], expectedKind, C{1, 9}, C{1, 13}, 2)
+
+	// Second levels
+	elems3 := elems2[2].Elements()
+	checkFrag(t, lx, elems3[0], TestFrFoo, C{1, 9}, C{1, 12}, 1)
+	checkFrag(t, lx, elems3[1], TestFrSep, C{1, 12}, C{1, 13}, 0)
+}
