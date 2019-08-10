@@ -8,9 +8,16 @@ import (
 
 // Lexer defines the interface of an abstract lexer implementation
 type Lexer interface {
-	Next() (*Token, error)
+	Read() (*Token, error)
+	ReadExact(
+		expectation string,
+		kind FragmentKind,
+	) (
+		token *Token,
+		matched bool,
+		err error,
+	)
 	Position() Cursor
-	Fork() Lexer
 	Set(Cursor)
 }
 
@@ -73,7 +80,7 @@ func (pr Parser) parseChecked(
 	expected Checked,
 ) (Fragment, error) {
 	beforeCr := scanner.Lexer.Position()
-	tk, err := scanner.Next()
+	tk, err := scanner.Read()
 	if err != nil {
 		return nil, err
 	}
@@ -211,17 +218,20 @@ func (pr Parser) parseEither(
 
 func (pr Parser) parseTermExact(
 	scanner *Scanner,
-	expected TermExact,
+	exact TermExact,
 ) (Fragment, error) {
 	beforeCr := scanner.Lexer.Position()
-	tk, err := scanner.Next()
+	tk, match, err := scanner.ReadExact(
+		exact.Expectation,
+		exact.Kind,
+	)
 	if err != nil {
 		return nil, err
 	}
-	if tk == nil || tk.Src() != string(expected) {
+	if !match {
 		return nil, &ErrUnexpectedToken{
 			At:       beforeCr,
-			Expected: expected,
+			Expected: exact,
 			Actual:   tk,
 		}
 	}
@@ -233,7 +243,7 @@ func (pr Parser) parseTerm(
 	expected Term,
 ) (Fragment, error) {
 	beforeCr := scanner.Lexer.Position()
-	tk, err := scanner.Next()
+	tk, err := scanner.Read()
 	if err != nil {
 		return nil, err
 	}
@@ -282,7 +292,7 @@ func (pr Parser) Parse(lexer Lexer, rule *Rule) (Fragment, error) {
 
 	// Ensure EOF
 	before := lexer.Position()
-	last, err := lexer.Next()
+	last, err := lexer.Read()
 	if err != nil {
 		return nil, err
 	}

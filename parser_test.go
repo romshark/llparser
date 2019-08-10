@@ -5,17 +5,71 @@ import (
 	"testing"
 
 	parser "github.com/romshark/llparser"
+	"github.com/romshark/llparser/misc"
 	"github.com/stretchr/testify/require"
 )
+
+type FragKind = parser.FragmentKind
+
+const (
+	_ FragKind = misc.FrSign + iota
+	TestFrFoo
+	TestFrBar
+)
+
+// Basic terminal types
+var (
+	testR_foo = &parser.Rule{
+		Designation: "keyword foo",
+		Pattern: parser.Checked{
+			Designation: "keyword foo",
+			Fn:          func(src string) bool { return src == "foo" },
+		},
+		Kind: TestFrFoo,
+	}
+	testR_bar = &parser.Rule{
+		Designation: "keyword bar",
+		Pattern: parser.Checked{
+			Designation: "keyword bar",
+			Fn:          func(src string) bool { return src == "bar" },
+		},
+		Kind: TestFrBar,
+	}
+)
+
+func newLexer(src string) parser.Lexer {
+	return misc.NewLexer(&parser.SourceFile{
+		Name: "test.txt",
+		Src:  src,
+	})
+}
 
 type C struct {
 	line   uint
 	column uint
 }
 
+// CheckCursor checks a cursor relative to the lexer
+func CheckCursor(
+	t *testing.T,
+	lexer parser.Lexer,
+	cursor parser.Cursor,
+	line,
+	column uint,
+) {
+	require.Equal(t, lexer.Position().File, cursor.File)
+	require.Equal(t, line, cursor.Line)
+	require.Equal(t, column, cursor.Column)
+	if column > 1 || line > 1 {
+		require.True(t, cursor.Index > 0)
+	} else if column == 1 && line == 1 {
+		require.Equal(t, uint(0), cursor.Index)
+	}
+}
+
 func checkFrag(
 	t *testing.T,
-	lexer *TestLexer,
+	lexer parser.Lexer,
 	frag parser.Fragment,
 	kind parser.FragmentKind,
 	begin C,
@@ -23,22 +77,22 @@ func checkFrag(
 	elements int,
 ) {
 	require.Equal(t, kind, frag.Kind())
-	lexer.CheckCursor(t, frag.Begin(), begin.line, begin.column)
-	lexer.CheckCursor(t, frag.End(), end.line, end.column)
+	CheckCursor(t, lexer, frag.Begin(), begin.line, begin.column)
+	CheckCursor(t, lexer, frag.End(), end.line, end.column)
 	require.Len(t, frag.Elements(), elements)
 }
 
 func TestParserSequence(t *testing.T) {
 	t.Run("SingleLevel", func(t *testing.T) {
 		pr := parser.NewParser()
-		lx := NewTestLexer("foo   bar")
+		lx := newLexer("foo   bar")
 		expectedKind := parser.FragmentKind(100)
 		mainFrag, err := pr.Parse(lx, &parser.Rule{
 			Designation: "foobar",
 			Pattern: parser.Sequence{
-				parser.Term(TestFrSeq),
-				parser.Term(TestFrSpace),
-				parser.Term(TestFrSeq),
+				parser.Term(misc.FrWord),
+				parser.Term(misc.FrSpace),
+				parser.Term(misc.FrWord),
 			},
 			Kind: expectedKind,
 		})
@@ -49,20 +103,20 @@ func TestParserSequence(t *testing.T) {
 		// Check elements
 		elems := mainFrag.Elements()
 
-		checkFrag(t, lx, elems[0], TestFrSeq, C{1, 1}, C{1, 4}, 0)
-		checkFrag(t, lx, elems[1], TestFrSpace, C{1, 4}, C{1, 7}, 0)
-		checkFrag(t, lx, elems[2], TestFrSeq, C{1, 7}, C{1, 10}, 0)
+		checkFrag(t, lx, elems[0], misc.FrWord, C{1, 1}, C{1, 4}, 0)
+		checkFrag(t, lx, elems[1], misc.FrSpace, C{1, 4}, C{1, 7}, 0)
+		checkFrag(t, lx, elems[2], misc.FrWord, C{1, 7}, C{1, 10}, 0)
 	})
 
 	t.Run("TwoLevels", func(t *testing.T) {
 		pr := parser.NewParser()
-		lx := NewTestLexer("foo   bar")
+		lx := newLexer("foo   bar")
 		expectedKind := parser.FragmentKind(100)
 		mainFrag, err := pr.Parse(lx, &parser.Rule{
 			Designation: "foobar",
 			Pattern: parser.Sequence{
 				testR_foo,
-				parser.Term(TestFrSpace),
+				parser.Term(misc.FrSpace),
 				testR_bar,
 			},
 			Kind: expectedKind,
@@ -74,21 +128,24 @@ func TestParserSequence(t *testing.T) {
 		elems := mainFrag.Elements()
 
 		checkFrag(t, lx, elems[0], TestFrFoo, C{1, 1}, C{1, 4}, 1)
-		checkFrag(t, lx, elems[1], TestFrSpace, C{1, 4}, C{1, 7}, 0)
+		checkFrag(t, lx, elems[1], misc.FrSpace, C{1, 4}, C{1, 7}, 0)
 		checkFrag(t, lx, elems[2], TestFrBar, C{1, 7}, C{1, 10}, 1)
 	})
 }
 
 // TestParserSequenceErr tests sequence parsing errors
 func TestParserSequenceErr(t *testing.T) {
-	t.Run("UnexpectedToken(expect_rule, first_item)", func(t *testing.T) {
+	t.Run("UnexpectedTokenTermExact", func(t *testing.T) {
 		pr := parser.NewParser()
-		lx := NewTestLexer("foo")
+		lx := newLexer("foo")
 		expectedKind := parser.FragmentKind(100)
 		mainFrag, err := pr.Parse(lx, &parser.Rule{
 			Designation: "foobar",
 			Pattern: parser.Sequence{
-				testR_bar,
+				parser.TermExact{
+					Kind:        TestFrBar,
+					Expectation: "bar",
+				},
 				testR_foo,
 			},
 			Kind: expectedKind,
@@ -97,21 +154,24 @@ func TestParserSequenceErr(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(
 			t,
-			"unexpected token 'foo', expected {keyword bar} at test.txt:1:1",
+			"unexpected token 'f', expected {'bar'} at test.txt:1:1",
 			err.Error(),
 		)
 		require.Nil(t, mainFrag)
 	})
-	t.Run("UnexpectedToken(expect_rule, second_item)", func(t *testing.T) {
+	t.Run("UnexpectedTokenChecked", func(t *testing.T) {
 		pr := parser.NewParser()
-		lx := NewTestLexer("foo foo")
+		lx := newLexer("foo foo")
 		expectedKind := parser.FragmentKind(100)
 		mainFrag, err := pr.Parse(lx, &parser.Rule{
 			Designation: "foobar",
 			Pattern: parser.Sequence{
 				testR_foo,
-				parser.Term(TestFrSpace),
-				testR_bar,
+				parser.Term(misc.FrSpace),
+				parser.Checked{
+					Designation: "checked token",
+					Fn:          func(str string) bool { return str == "bar" },
+				},
 			},
 			Kind: expectedKind,
 		})
@@ -119,7 +179,7 @@ func TestParserSequenceErr(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(
 			t,
-			"unexpected token 'foo', expected {keyword bar} at test.txt:1:5",
+			"unexpected token 'foo', expected {checked token} at test.txt:1:5",
 			err.Error(),
 		)
 		require.Nil(t, mainFrag)
@@ -129,14 +189,14 @@ func TestParserSequenceErr(t *testing.T) {
 func TestParserOptionalInSequence(t *testing.T) {
 	t.Run("Missing", func(t *testing.T) {
 		pr := parser.NewParser()
-		lx := NewTestLexer("bar")
+		lx := newLexer("bar")
 		expectedKind := parser.FragmentKind(100)
 		mainFrag, err := pr.Parse(lx, &parser.Rule{
 			Designation: "?foo bar",
 			Pattern: parser.Sequence{
 				parser.Optional{parser.Sequence{
 					testR_foo,
-					parser.Term(TestFrSpace),
+					parser.Term(misc.FrSpace),
 				}},
 				testR_bar,
 			},
@@ -154,14 +214,14 @@ func TestParserOptionalInSequence(t *testing.T) {
 
 	t.Run("Present", func(t *testing.T) {
 		pr := parser.NewParser()
-		lx := NewTestLexer("foo bar")
+		lx := newLexer("foo bar")
 		expectedKind := parser.FragmentKind(100)
 		mainFrag, err := pr.Parse(lx, &parser.Rule{
 			Designation: "?foo bar",
 			Pattern: parser.Sequence{
 				parser.Optional{parser.Sequence{
 					testR_foo,
-					parser.Term(TestFrSpace),
+					parser.Term(misc.FrSpace),
 				}},
 				testR_bar,
 			},
@@ -174,14 +234,14 @@ func TestParserOptionalInSequence(t *testing.T) {
 		elems := mainFrag.Elements()
 
 		checkFrag(t, lx, elems[0], TestFrFoo, C{1, 1}, C{1, 4}, 1)
-		checkFrag(t, lx, elems[1], TestFrSpace, C{1, 4}, C{1, 5}, 0)
+		checkFrag(t, lx, elems[1], misc.FrSpace, C{1, 4}, C{1, 5}, 0)
 		checkFrag(t, lx, elems[2], TestFrBar, C{1, 5}, C{1, 8}, 1)
 	})
 }
 
 func TestParserChecked(t *testing.T) {
 	pr := parser.NewParser()
-	lx := NewTestLexer("example")
+	lx := newLexer("example")
 	expectedKind := parser.FragmentKind(100)
 	mainFrag, err := pr.Parse(lx, &parser.Rule{
 		Designation: "keyword 'example'",
@@ -197,13 +257,13 @@ func TestParserChecked(t *testing.T) {
 	// Check elements
 	elems := mainFrag.Elements()
 
-	checkFrag(t, lx, elems[0], TestFrSeq, C{1, 1}, C{1, 8}, 0)
+	checkFrag(t, lx, elems[0], misc.FrWord, C{1, 1}, C{1, 8}, 0)
 }
 
 // TestParserCheckedErr tests checked parsing errors
 func TestParserCheckedErr(t *testing.T) {
 	pr := parser.NewParser()
-	lx := NewTestLexer("elpmaxe")
+	lx := newLexer("elpmaxe")
 	expectedKind := parser.FragmentKind(100)
 	mainFrag, err := pr.Parse(lx, &parser.Rule{
 		Designation: "keyword 'example'",
@@ -226,14 +286,14 @@ func TestParserCheckedErr(t *testing.T) {
 func TestParserZeroOrMore(t *testing.T) {
 	t.Run("None", func(t *testing.T) {
 		pr := parser.NewParser()
-		lx := NewTestLexer("foo")
+		lx := newLexer("foo")
 		expectedKind := parser.FragmentKind(100)
 		mainFrag, err := pr.Parse(lx, &parser.Rule{
 			Designation: "(space foo)*",
 			Pattern: parser.Sequence{
 				parser.ZeroOrMore{
 					parser.Sequence{
-						parser.Term(TestFrSpace),
+						parser.Term(misc.FrSpace),
 						testR_foo,
 					},
 				},
@@ -257,13 +317,13 @@ func TestParserZeroOrMore(t *testing.T) {
 
 	t.Run("One", func(t *testing.T) {
 		pr := parser.NewParser()
-		lx := NewTestLexer(" foo")
+		lx := newLexer(" foo")
 		expectedKind := parser.FragmentKind(100)
 		mainFrag, err := pr.Parse(lx, &parser.Rule{
 			Designation: "(space foo)*",
 			Pattern: parser.ZeroOrMore{
 				parser.Sequence{
-					parser.Term(TestFrSpace),
+					parser.Term(misc.FrSpace),
 					testR_foo,
 				},
 			},
@@ -275,19 +335,19 @@ func TestParserZeroOrMore(t *testing.T) {
 		// Check elements
 		elems := mainFrag.Elements()
 
-		checkFrag(t, lx, elems[0], TestFrSpace, C{1, 1}, C{1, 2}, 0)
+		checkFrag(t, lx, elems[0], misc.FrSpace, C{1, 1}, C{1, 2}, 0)
 		checkFrag(t, lx, elems[1], TestFrFoo, C{1, 2}, C{1, 5}, 1)
 	})
 
 	t.Run("Multiple", func(t *testing.T) {
 		pr := parser.NewParser()
-		lx := NewTestLexer(" foo foo foo")
+		lx := newLexer(" foo foo foo")
 		expectedKind := parser.FragmentKind(100)
 		mainFrag, err := pr.Parse(lx, &parser.Rule{
 			Designation: "(space foo)*",
 			Pattern: parser.ZeroOrMore{
 				parser.Sequence{
-					parser.Term(TestFrSpace),
+					parser.Term(misc.FrSpace),
 					testR_foo,
 				},
 			},
@@ -299,11 +359,11 @@ func TestParserZeroOrMore(t *testing.T) {
 		// Check elements
 		elements := mainFrag.Elements()
 
-		checkFrag(t, lx, elements[0], TestFrSpace, C{1, 1}, C{1, 2}, 0)
+		checkFrag(t, lx, elements[0], misc.FrSpace, C{1, 1}, C{1, 2}, 0)
 		checkFrag(t, lx, elements[1], TestFrFoo, C{1, 2}, C{1, 5}, 1)
-		checkFrag(t, lx, elements[2], TestFrSpace, C{1, 5}, C{1, 6}, 0)
+		checkFrag(t, lx, elements[2], misc.FrSpace, C{1, 5}, C{1, 6}, 0)
 		checkFrag(t, lx, elements[3], TestFrFoo, C{1, 6}, C{1, 9}, 1)
-		checkFrag(t, lx, elements[4], TestFrSpace, C{1, 9}, C{1, 10}, 0)
+		checkFrag(t, lx, elements[4], misc.FrSpace, C{1, 9}, C{1, 10}, 0)
 		checkFrag(t, lx, elements[5], TestFrFoo, C{1, 10}, C{1, 13}, 1)
 	})
 }
@@ -311,13 +371,13 @@ func TestParserZeroOrMore(t *testing.T) {
 func TestParserOneOrMore(t *testing.T) {
 	t.Run("None", func(t *testing.T) {
 		pr := parser.NewParser()
-		lx := NewTestLexer("foo")
+		lx := newLexer("foo")
 		expectedKind := parser.FragmentKind(100)
 		mainFrag, err := pr.Parse(lx, &parser.Rule{
 			Designation: "(space foo)*",
 			Pattern: parser.OneOrMore{
 				parser.Sequence{
-					parser.Term(TestFrSpace),
+					parser.Term(misc.FrSpace),
 					testR_foo,
 				},
 			},
@@ -336,13 +396,13 @@ func TestParserOneOrMore(t *testing.T) {
 
 	t.Run("One", func(t *testing.T) {
 		pr := parser.NewParser()
-		lx := NewTestLexer(" foo")
+		lx := newLexer(" foo")
 		expectedKind := parser.FragmentKind(100)
 		mainFrag, err := pr.Parse(lx, &parser.Rule{
 			Designation: "(space foo)*",
 			Pattern: parser.ZeroOrMore{
 				parser.Sequence{
-					parser.Term(TestFrSpace),
+					parser.Term(misc.FrSpace),
 					testR_foo,
 				},
 			},
@@ -354,19 +414,19 @@ func TestParserOneOrMore(t *testing.T) {
 		// Check elements
 		elems := mainFrag.Elements()
 
-		checkFrag(t, lx, elems[0], TestFrSpace, C{1, 1}, C{1, 2}, 0)
+		checkFrag(t, lx, elems[0], misc.FrSpace, C{1, 1}, C{1, 2}, 0)
 		checkFrag(t, lx, elems[1], TestFrFoo, C{1, 2}, C{1, 5}, 1)
 	})
 
 	t.Run("Multiple", func(t *testing.T) {
 		pr := parser.NewParser()
-		lx := NewTestLexer(" foo foo foo")
+		lx := newLexer(" foo foo foo")
 		expectedKind := parser.FragmentKind(100)
 		mainFrag, err := pr.Parse(lx, &parser.Rule{
 			Designation: "(space foo)*",
 			Pattern: parser.OneOrMore{
 				parser.Sequence{
-					parser.Term(TestFrSpace),
+					parser.Term(misc.FrSpace),
 					testR_foo,
 				},
 			},
@@ -378,18 +438,18 @@ func TestParserOneOrMore(t *testing.T) {
 
 		// Check elements
 		elements := mainFrag.Elements()
-		checkFrag(t, lx, elements[0], TestFrSpace, C{1, 1}, C{1, 2}, 0)
+		checkFrag(t, lx, elements[0], misc.FrSpace, C{1, 1}, C{1, 2}, 0)
 		checkFrag(t, lx, elements[1], TestFrFoo, C{1, 2}, C{1, 5}, 1)
-		checkFrag(t, lx, elements[2], TestFrSpace, C{1, 5}, C{1, 6}, 0)
+		checkFrag(t, lx, elements[2], misc.FrSpace, C{1, 5}, C{1, 6}, 0)
 		checkFrag(t, lx, elements[3], TestFrFoo, C{1, 6}, C{1, 9}, 1)
-		checkFrag(t, lx, elements[4], TestFrSpace, C{1, 9}, C{1, 10}, 0)
+		checkFrag(t, lx, elements[4], misc.FrSpace, C{1, 9}, C{1, 10}, 0)
 		checkFrag(t, lx, elements[5], TestFrFoo, C{1, 10}, C{1, 13}, 1)
 	})
 }
 
 func TestParserSuperfluousInput(t *testing.T) {
 	pr := parser.NewParser()
-	lx := NewTestLexer("foo ")
+	lx := newLexer("foo ")
 	expectedKind := parser.FragmentKind(100)
 	mainFrag, err := pr.Parse(lx, &parser.Rule{
 		Designation: "single foo",
@@ -405,7 +465,7 @@ func TestParserSuperfluousInput(t *testing.T) {
 func TestParserEither(t *testing.T) {
 	t.Run("Neither", func(t *testing.T) {
 		pr := parser.NewParser()
-		lx := NewTestLexer("  ")
+		lx := newLexer("  ")
 		expectedKind := parser.FragmentKind(100)
 		mainFrag, err := pr.Parse(lx, &parser.Rule{
 			Designation: "(Foo / Bar)",
@@ -428,7 +488,7 @@ func TestParserEither(t *testing.T) {
 
 	t.Run("First", func(t *testing.T) {
 		pr := parser.NewParser()
-		lx := NewTestLexer("foo")
+		lx := newLexer("foo")
 		expectedKind := parser.FragmentKind(100)
 		mainFrag, err := pr.Parse(lx, &parser.Rule{
 			Designation: "(Foo / Bar)",
@@ -451,7 +511,7 @@ func TestParserEither(t *testing.T) {
 
 	t.Run("Second", func(t *testing.T) {
 		pr := parser.NewParser()
-		lx := NewTestLexer("bar")
+		lx := newLexer("bar")
 		expectedKind := parser.FragmentKind(100)
 		mainFrag, err := pr.Parse(lx, &parser.Rule{
 			Designation: "(Foo / Bar)",
@@ -475,7 +535,7 @@ func TestParserEither(t *testing.T) {
 
 func TestParserRecursiveRule(t *testing.T) {
 	pr := parser.NewParser()
-	lx := NewTestLexer("foo,foo,foo,")
+	lx := newLexer("foo,foo,foo,")
 	expectedKind := parser.FragmentKind(100)
 	recursiveRule := &parser.Rule{
 		Designation: "recursive",
@@ -483,7 +543,7 @@ func TestParserRecursiveRule(t *testing.T) {
 	}
 	recursiveRule.Pattern = parser.Sequence{
 		testR_foo,
-		parser.Term(TestFrSep),
+		parser.Term(misc.FrSign),
 		parser.Optional{recursiveRule},
 	}
 	mainFrag, err := pr.Parse(lx, recursiveRule)
@@ -495,19 +555,19 @@ func TestParserRecursiveRule(t *testing.T) {
 	elems := mainFrag.Elements()
 
 	checkFrag(t, lx, elems[0], TestFrFoo, C{1, 1}, C{1, 4}, 1)
-	checkFrag(t, lx, elems[1], TestFrSep, C{1, 4}, C{1, 5}, 0)
+	checkFrag(t, lx, elems[1], misc.FrSign, C{1, 4}, C{1, 5}, 0)
 	checkFrag(t, lx, elems[2], expectedKind, C{1, 5}, C{1, 13}, 3)
 
 	// Second levels
 	elems2 := elems[2].Elements()
 	checkFrag(t, lx, elems2[0], TestFrFoo, C{1, 5}, C{1, 8}, 1)
-	checkFrag(t, lx, elems2[1], TestFrSep, C{1, 8}, C{1, 9}, 0)
+	checkFrag(t, lx, elems2[1], misc.FrSign, C{1, 8}, C{1, 9}, 0)
 	checkFrag(t, lx, elems2[2], expectedKind, C{1, 9}, C{1, 13}, 2)
 
 	// Second levels
 	elems3 := elems2[2].Elements()
 	checkFrag(t, lx, elems3[0], TestFrFoo, C{1, 9}, C{1, 12}, 1)
-	checkFrag(t, lx, elems3[1], TestFrSep, C{1, 12}, C{1, 13}, 0)
+	checkFrag(t, lx, elems3[1], misc.FrSign, C{1, 12}, C{1, 13}, 0)
 }
 
 func TestParserAction(t *testing.T) {
@@ -516,12 +576,12 @@ func TestParserAction(t *testing.T) {
 	aFrags := make([]parser.Fragment, 0, 2)
 	bFrags := make([]parser.Fragment, 0, 2)
 
-	lx := NewTestLexer("a,b,b,a,")
+	lx := newLexer("a,b,b,a,")
 	aKind := parser.FragmentKind(905)
 	ruleA := &parser.Rule{
 		Designation: "a",
 		Kind:        aKind,
-		Pattern:     parser.TermExact("a"),
+		Pattern:     parser.TermExact{misc.FrWord, "a"},
 		Action: func(f parser.Fragment) error {
 			aFrags = append(aFrags, f)
 			return nil
@@ -531,7 +591,7 @@ func TestParserAction(t *testing.T) {
 	ruleB := &parser.Rule{
 		Designation: "b",
 		Kind:        bKind,
-		Pattern:     parser.TermExact("b"),
+		Pattern:     parser.TermExact{misc.FrWord, "b"},
 		Action: func(f parser.Fragment) error {
 			bFrags = append(bFrags, f)
 			return nil
@@ -543,7 +603,7 @@ func TestParserAction(t *testing.T) {
 			Designation: "list item",
 			Pattern: parser.Sequence{
 				parser.Either{ruleA, ruleB},
-				parser.Term(TestFrSep),
+				parser.Term(misc.FrSign),
 			},
 		}},
 	})
@@ -562,13 +622,13 @@ func TestParserAction(t *testing.T) {
 
 func TestParserActionErr(t *testing.T) {
 	pr := parser.NewParser()
-	lx := NewTestLexer("a")
+	lx := newLexer("a")
 
 	expectedErr := errors.New("custom error")
 	mainFrag, err := pr.Parse(lx, &parser.Rule{
 		Designation: "a",
 		Kind:        900,
-		Pattern:     parser.TermExact("a"),
+		Pattern:     parser.TermExact{misc.FrWord, "a"},
 		Action: func(f parser.Fragment) error {
 			return expectedErr
 		},

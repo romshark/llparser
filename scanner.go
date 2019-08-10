@@ -14,22 +14,16 @@ func NewScanner(lexer Lexer) *Scanner {
 	return &Scanner{Lexer: lexer}
 }
 
-// Fork creates a new scanner branching off the original one
-// without the record history of the original scanner
-func (sc *Scanner) Fork() *Scanner {
-	return &Scanner{Lexer: sc.Lexer.Fork()}
-}
-
 // New creates a new scanner succeeding the original one
 // dropping its record history
 func (sc *Scanner) New() *Scanner {
 	return &Scanner{Lexer: sc.Lexer}
 }
 
-// Next advances the scanner by 1 token returning either the read fragment
+// Read advances the scanner by 1 token returning either the read fragment
 // or an error if the lexer failed
-func (sc *Scanner) Next() (*Token, error) {
-	nx, err := sc.Lexer.Next()
+func (sc *Scanner) Read() (*Token, error) {
+	nx, err := sc.Lexer.Read()
 	if err != nil {
 		return nil, err
 	}
@@ -38,6 +32,23 @@ func (sc *Scanner) Next() (*Token, error) {
 	}
 	sc.Records = append(sc.Records, nx)
 	return nx, nil
+}
+
+// ReadExact advances the scanner by 1 exact token returning either the read
+// fragment or nil if the expectation didn't match
+func (sc *Scanner) ReadExact(
+	expectation string,
+	kind FragmentKind,
+) (*Token, bool, error) {
+	nx, match, err := sc.Lexer.ReadExact(expectation, kind)
+	if err != nil {
+		return nil, false, err
+	}
+	if nx == nil {
+		return nil, match, nil
+	}
+	sc.Records = append(sc.Records, nx)
+	return nx, match, nil
 }
 
 // Append appends a fragment to the records

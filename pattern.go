@@ -33,7 +33,10 @@ func (tm Term) Desig() string {
 }
 
 // TermExact represents an exact terminal token pattern
-type TermExact string
+type TermExact struct {
+	Kind        FragmentKind
+	Expectation string
+}
 
 // Container implements the Pattern interface
 func (TermExact) Container() bool { return false }
@@ -42,7 +45,7 @@ func (TermExact) Container() bool { return false }
 func (TermExact) TerminalPattern() Pattern { return nil }
 
 // Desig implements the Pattern interface
-func (tm TermExact) Desig() string { return "'" + string(tm) + "'" }
+func (tm TermExact) Desig() string { return "'" + tm.Expectation + "'" }
 
 // Checked represents an arbitrary terminal token pattern matched by a function
 type Checked struct {
