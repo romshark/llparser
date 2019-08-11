@@ -4,12 +4,12 @@ import "fmt"
 
 // Err represents a generic parser error
 type Err struct {
-	Msg string
+	Err error
 	At  Cursor
 }
 
 func (err *Err) Error() string {
-	return fmt.Sprintf("%s at %s", err.Msg, err.At.String())
+	return fmt.Sprintf("%s at %s", err.Err, err.At.String())
 }
 
 // ErrUnexpectedToken represents a parser error

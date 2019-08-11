@@ -40,7 +40,8 @@ func (pr Parser) handlePattern(
 			// Override expected pattern to the higher-order rule
 			err.Expected = pt
 			return nil, err
-		} else if err != nil {
+		}
+		if err != nil {
 			return nil, err
 		}
 		return tk, nil
@@ -103,7 +104,7 @@ func (pr Parser) parseOptional(
 	if err != nil {
 		if _, ok := err.(*ErrUnexpectedToken); ok {
 			// Reset scanner to the initial position
-			scanner.Lexer.Set(beforeCr)
+			scanner.Set(beforeCr)
 			return nil, nil
 		}
 		return nil, err
@@ -200,7 +201,7 @@ func (pr Parser) parseEither(
 					er.Expected = patternOptions
 				} else {
 					// Reset scanner to the initial position
-					scanner.Lexer.Set(beforeCr)
+					scanner.Set(beforeCr)
 					// Continue checking other options
 					continue
 				}
@@ -273,7 +274,7 @@ func (pr Parser) parseRule(
 	if rule.Action != nil {
 		// Execute rule action callback
 		if err := rule.Action(composedFrag); err != nil {
-			return nil, err
+			return nil, &Err{Err: err, At: composedFrag.Begin()}
 		}
 	}
 
