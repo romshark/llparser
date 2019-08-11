@@ -635,6 +635,11 @@ func TestParserActionErr(t *testing.T) {
 	})
 
 	require.Error(t, err)
-	require.Equal(t, expectedErr, err)
+	require.IsType(t, &parser.Err{}, err)
+	er := err.(*parser.Err)
+	require.Equal(t, expectedErr, er.Err)
+	require.Equal(t, uint(0), er.At.Index)
+	require.Equal(t, uint(1), er.At.Line)
+	require.Equal(t, uint(1), er.At.Column)
 	require.Nil(t, mainFrag)
 }
