@@ -33,46 +33,9 @@ func isSpecialChar(bt byte) bool {
 	return false
 }
 
-func isDigit(bt byte) bool {
-	if bt >= 0x30 && bt <= 0x39 {
-		// 0-9
-		return true
-	}
-	return false
-}
-
 func isSpace(bt byte) bool {
 	if bt == ' ' || bt == '\t' {
 		// whitespace or tab
-		return true
-	}
-	return false
-}
-
-func isLatinLower(bt byte) bool {
-	if bt >= 0x61 && bt <= 0x7A {
-		// a-z
-		return true
-	}
-	return false
-}
-
-func isLatinUpper(bt byte) bool {
-	if bt >= 0x41 && bt <= 0x5A {
-		// A-Z
-		return true
-	}
-	return false
-}
-
-func isLatinAlphanum(bt byte) bool {
-	if isDigit(bt) {
-		return true
-	}
-	if isLatinLower(bt) {
-		return true
-	}
-	if isLatinUpper(bt) {
 		return true
 	}
 	return false
