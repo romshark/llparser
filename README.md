@@ -7,6 +7,9 @@
 <a href="https://goreportcard.com/report/github.com/romshark/llparser">
 	<img src="https://goreportcard.com/badge/github.com/romshark/llparser" alt="GoReportCard">
 </a>
+<a href="https://godoc.org/github.com/romshark/llparser">
+	<img src="https://godoc.org/github.com/romshark/llparser?status.svg" alt="GoDoc">
+</a>
 
 <h2>
 	<span>A Universal Dynamic <a href="https://en.wikipedia.org/wiki/LL_parser">LL(*)</a> Parser</span>
