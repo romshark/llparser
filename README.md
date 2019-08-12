@@ -67,12 +67,10 @@ rule.Pattern = llparser.Sequence{
 }
 ```
 
-### Combinators
-
-There are different kinds of pattern combinators available:
+### Terminals
 
 #### Pattern: Term
-`Term` expects a particular fragment kind to be lexed and redefines its kind if instructed to:
+`Term` expects a particular fragment kind to be lexed:
 
 ```go
 Pattern: llparser.Term(SomeKindConstant),
@@ -97,6 +95,8 @@ Pattern: llparser.Checked{
 	Fn: func(str string) bool { return len(str) > 5 },
 },
 ```
+
+### Combinators
 
 #### Pattern: Optional
 `Optional` tries to match a specific pattern but doesn't expect it to be matched:
