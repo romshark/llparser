@@ -1,0 +1,27 @@
+{
+	"Actors": [{
+			"name": "Tom Cruise",
+			"age": 56,
+			"wife": null,
+			"weight": 67.5,
+			"hasChildren": true,
+			"children": [
+				"Suri",
+				"Isabella Jane",
+				"Connor"
+			]
+		},
+		{
+			"name": "Robert Downey Jr.",
+			"age": 53,
+			"wife": "Susan Downey",
+			"weight": 77.1,
+			"hasChildren": true,
+			"children": [
+				"Indio Falconer",
+				"Avri Roel",
+				"Exton Elias"
+			]
+		}
+	]
+}
