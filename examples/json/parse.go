@@ -1,8 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
-
 	parser "github.com/romshark/llparser"
 	"github.com/romshark/llparser/misc"
 )
@@ -33,16 +31,14 @@ const (
 
 	// FrBoolean Json Boolean Datatype
 	FrBoolean
+
+	// FrLiteral Json Boolean Datatype
+	FrLiteral
 )
 
 // Parse parses a dick-lang file
 // This parser was written with the JSON RFC Spec (https://tools.ietf.org/html/rfc7159) as reference
-func Parse(filePath string) (*ModelJSON, error) {
-	// Read the source file into memory
-	bt, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		return nil, err
-	}
+func Parse(source string) (*ModelJSON, error) {
 
 	// Initialize model
 	mod := &ModelJSON{}
@@ -50,7 +46,7 @@ func Parse(filePath string) (*ModelJSON, error) {
 	// Define the grammar
 
 	ruleNull := &parser.Rule{
-		Designation: "string",
+		Designation: "null",
 		Kind:        FrNull,
 		Pattern: parser.TermExact{
 			Kind: misc.FrWord, Expectation: "null",
@@ -59,14 +55,17 @@ func Parse(filePath string) (*ModelJSON, error) {
 
 	// ruleString := &parser.Rule{
 	// 	Designation: "string",
-	// 	Kind:        FrString,
-	// 	Pattern: parser.TermExact{
-	// 		Pattern: parser.Either{
-	// 			parser.TermExact{Kind: misc.FrSign, Expectation: "="},
-	// 			parser.TermExact{Kind: misc.FrSign, Expectation: ":"},
-	// 			parser.TermExact{Kind: misc.FrWord, Expectation: "x"},
+	// 	Kind:        FrDick,
+	// 	Pattern: parser.Sequence{
+	// 		parser.TermExact{Kind: FrLiteral, Expectation: "\""},
+	// 		parser.Either{
+	// 			parser.TermExact{Kind: FrBalls, Expectation: "8"},
+	// 			parser.TermExact{Kind: FrBalls, Expectation: "B"},
 	// 		},
+	// 		ruleShaft,
+	// 		parser.TermExact{Kind: FrLiteral, Expectation: "\""},
 	// 	},
+	// 	Action: mod.onDickDetected,
 	// }
 
 	// ruleNumber := &parser.Rule{
@@ -132,14 +131,15 @@ func Parse(filePath string) (*ModelJSON, error) {
 					parser.Optional{Pattern: parser.Term(misc.FrSpace)},
 				},
 			},
+			parser.Optional{Pattern: parser.Term(misc.FrSpace)},
 		},
 	}
 
 	// Initialize lexer and parser
 	par := parser.NewParser()
 	lex := misc.NewLexer(&parser.SourceFile{
-		Name: filePath,
-		Src:  string(bt),
+		Name: "json sample",
+		Src:  source,
 	})
 
 	// Parse the source file

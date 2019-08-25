@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 
@@ -22,7 +23,14 @@ var flagPrintParseTree = flag.Bool(
 
 func main() {
 	flag.Parse()
-	mod, err := Parse(*flagFilePath)
+
+	// Read the source file into memory
+	bt, err := ioutil.ReadFile(*flagFilePath)
+	if err != nil {
+		log.Fatal("ERR: ", err)
+	}
+
+	mod, err := Parse(string(bt))
 	if err != nil {
 		log.Fatal("ERR: ", err)
 	}
