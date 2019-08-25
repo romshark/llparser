@@ -51,7 +51,7 @@ func Parse(filePath string) (*ModelJSON, error) {
 
 	ruleNull := &parser.Rule{
 		Designation: "string",
-		Kind:        FrString,
+		Kind:        FrNull,
 		Pattern: parser.TermExact{
 			Kind: misc.FrWord, Expectation: "null",
 		},
