@@ -37,8 +37,8 @@ func main() {
 	}
 
 	// Print all parsed dicks
-	fmt.Printf("%d JSON parsed:\n", len(mod.Dicks))
-	for ix, dick := range mod.Dicks {
-		fmt.Printf(" %d: %s\n", ix, dick.Frag.Src())
+	fmt.Printf("%d JSON parsed:\n", len(mod.JSON))
+	for ix, json := range mod.JSON {
+		fmt.Printf(" %d: %s\n", ix, json.Frag.Src())
 	}
 }

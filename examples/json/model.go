@@ -6,19 +6,19 @@ import (
 	parser "github.com/romshark/llparser"
 )
 
-// ModelJSONArray represents the model of a json source file
-type ModelJSONArray struct {
+// ModelJSON represents the model of a json source file
+type ModelJSON struct {
 	Frag parser.Fragment
-	JSON []ModelJSON
+	JSON []ModelJSONObject
 }
 
-// ModelJSON represents the model of a dick expression
-type ModelJSON struct {
+// ModelJSONObject represents the model of a dick expression
+type ModelJSONObject struct {
 	Frag        parser.Fragment
 	ShaftLength uint
 }
 
-func (mod *ModelJSONArray) onJSONDetected(frag parser.Fragment) error {
+func (mod *ModelJSON) onJSONDetected(frag parser.Fragment) error {
 	shaftLength := uint(len(frag.Elements()[1].Elements()))
 
 	// Check dick length
@@ -30,7 +30,7 @@ func (mod *ModelJSONArray) onJSONDetected(frag parser.Fragment) error {
 	}
 
 	// Register the newly json structure
-	mod.JSON = append(mod.JSON, ModelJSON{
+	mod.JSON = append(mod.JSON, ModelJSONObject{
 		Frag:        frag,
 		ShaftLength: shaftLength,
 	})
