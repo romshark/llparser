@@ -30,7 +30,7 @@ func main() {
 		log.Fatal("ERR: ", err)
 	}
 
-	mod, err := Parse(string(bt))
+	mod, err := Parse(*flagFilePath, string(bt))
 	if err != nil {
 		log.Fatal("ERR: ", err)
 	}

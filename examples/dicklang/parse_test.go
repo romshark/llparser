@@ -2,43 +2,37 @@
 package main
 
 import (
-	"os"
 	"testing"
 
-	parser "github.com/romshark/llparser"
-	_ "github.com/romshark/llparser/misc"
+	"github.com/stretchr/testify/require"
 )
 
-// Set printParseTree to true to print the parse-tree
-// instead of the model
-var printParseTree = false
-
-// Change the source code however you like
-var src = `
-B===> 8==>  B::>
-	<====8 <::::::3
-		8xxxx> 8xxx=xxx>
-	B:x:=:x>
- <:=3
-`
-
 func TestParser(t *testing.T) {
-	mod, err := Parse(src)
+
+	// Change the source code however you like
+	var src = `
+	B===> 8==>  B::>
+		<====8 <::::::3
+			8xxxx> 8xxx=xxx>
+		B:x:=:x>
+	 <:=3
+	`
+
+	mod, err := Parse("sample.dicklang", src)
 	if err != nil {
 		t.Log("ERR: ", err)
 	}
 
-	if printParseTree {
-		// Print the parse-tree only
-		_, err := parser.PrintFragment(mod.Frag, os.Stdout, "  ")
-		if err != nil {
-			t.Log("ERR (Tree Parse): ", err)
-		}
-		return
-	}
-	l := len(mod.Dicks)
-	if l != 9 {
-		t.Errorf("Number of Dicks parsed was incorrect , got: %d, want: %d.", l, 9)
-	}
+	require.Len(t, mod.Dicks, 9)
+
+	require.Equal(t, mod.Dicks[0].Frag.Src(), "B===>")
+	require.Equal(t, mod.Dicks[1].Frag.Src(), "8==>")
+	require.Equal(t, mod.Dicks[2].Frag.Src(), "B::>")
+	require.Equal(t, mod.Dicks[3].Frag.Src(), "<====8")
+	require.Equal(t, mod.Dicks[4].Frag.Src(), "<::::::3")
+	require.Equal(t, mod.Dicks[5].Frag.Src(), "8xxxx>")
+	require.Equal(t, mod.Dicks[6].Frag.Src(), "8xxx=xxx>")
+	require.Equal(t, mod.Dicks[7].Frag.Src(), "B:x:=:x>")
+	require.Equal(t, mod.Dicks[8].Frag.Src(), "<:=3")
 
 }

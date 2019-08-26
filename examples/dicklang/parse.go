@@ -25,7 +25,7 @@ const (
 )
 
 // Parse parses a dick-lang file
-func Parse(source string) (*ModelDicks, error) {
+func Parse(fileName, source string) (*ModelDicks, error) {
 
 	// Initialize model
 	mod := &ModelDicks{}
@@ -90,7 +90,7 @@ func Parse(source string) (*ModelDicks, error) {
 	// Initialize lexer and parser
 	par := parser.NewParser()
 	lex := misc.NewLexer(&parser.SourceFile{
-		Name: "sample.dicklang",
+		Name: fileName,
 		Src:  source,
 	})
 
