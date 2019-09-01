@@ -95,6 +95,21 @@ func checkFrag(
 	require.Len(t, frag.Elements(), elements)
 }
 
+func TestTokenString(t *testing.T) {
+	lx := newLexer("abcdefg")
+	tk, matched, err := lx.ReadExact([]rune("abc"), parser.FragmentKind(100))
+
+	require.NoError(t, err)
+	require.True(t, matched)
+	require.Equal(t, "100(test.txt: 1:1-1:4 'abc')", tk.String())
+
+	tk, matched, err = lx.ReadExact([]rune("defg"), parser.FragmentKind(101))
+
+	require.NoError(t, err)
+	require.True(t, matched)
+	require.Equal(t, "101(test.txt: 1:4-1:8 'defg')", tk.String())
+}
+
 func TestParserSequence(t *testing.T) {
 	t.Run("SingleLevel", func(t *testing.T) {
 		pr := parser.NewParser()
