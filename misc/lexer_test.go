@@ -278,7 +278,7 @@ func TestLexerReadUntil(t *testing.T) {
 		require.Nil(t, tk6)
 	})
 
-	// Nil returning 0 immediatelly for any cursor
+	// Nil returning 0 immediately for any cursor
 	t.Run("Nil", func(t *testing.T) {
 		lex := misc.NewLexer(&parser.SourceFile{
 			Name: "test.txt",
