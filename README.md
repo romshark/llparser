@@ -95,9 +95,26 @@ Pattern: llparser.TermExact{
 ```go
 Pattern: llparser.Checked{
 	Designation: "some checked terminal",
-	Fn: func(str string) bool { return len(str) > 5 },
+	Fn:          func(str string) bool { return len(str) > 5 },
 },
 ```
+
+#### Pattern: Lexed
+`Lexed` tries to lex an arbitrary sequence of characters according to `Fn`:
+
+```go
+Pattern: llparser.Lexed{
+	Designation: "some lexed terminal",
+	Kind:        SomeKindConstant,
+	Fn: func(crs llparser.Cursor) uint {
+		if crs.File.Src[crs.Index] == '|' {
+			return 0
+		}
+		return 1
+	},
+},
+```
+`Fn` returns either `0` for ending the sequence, `1` for advancing for 1 rune or any positive integer _n_ to advance for _n_ runes.
 
 ### Combinators
 
