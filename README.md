@@ -33,7 +33,7 @@ mainRule := &llparser.Rule{
 	Kind: 100,
 	Pattern: llparser.TermExact{
 		Kind:        101,
-		Expectation: "string",
+		Expectation: []rune("string"),
 	},
 	Action: func(f llparser..Fragment) error {
 		log.Print("the rule was successfuly matched!")
@@ -51,7 +51,7 @@ Rules can be nested:
 ruleTwo := &llparser.Rule{
 	Pattern: llparser.TermExact{
 		Kind:        101,
-		Expectation: "string",
+		Expectation: []rune("string"),
 	},
 }
 
@@ -85,7 +85,7 @@ Pattern: llparser.Term(SomeKindConstant),
 ```go
 Pattern: llparser.TermExact{
 	Kind:        SomeKindConstant,
-	Expectation: "some string",
+	Expectation: []rune("some string"),
 },
 ```
 
@@ -95,7 +95,7 @@ Pattern: llparser.TermExact{
 ```go
 Pattern: llparser.Checked{
 	Designation: "some checked terminal",
-	Fn:          func(str string) bool { return len(str) > 5 },
+	Fn:          func(str []rune) bool { return len(str) > 5 },
 },
 ```
 
@@ -175,17 +175,29 @@ Pattern: llparser.Either{
 The lexer is an abstract part of the parser which [tokenizes](https://en.wikipedia.org/wiki/Lexical_analysis#Tokenization) the input stream:
 
 ```go
+// Lexer defines the interface of an abstract lexer implementation
 type Lexer interface {
 	Read() (*Token, error)
+
 	ReadExact(
-		expectation string,
+		expectation []rune,
 		kind FragmentKind,
 	) (
 		token *Token,
 		matched bool,
 		err error,
 	)
+
+	ReadUntil(
+		fn func(Cursor) uint,
+		kind FragmentKind,
+	) (
+		token *Token,
+		err error,
+	)
+
 	Position() Cursor
+
 	Set(Cursor)
 }
 ```
