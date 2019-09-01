@@ -9,15 +9,26 @@ import (
 // Lexer defines the interface of an abstract lexer implementation
 type Lexer interface {
 	Read() (*Token, error)
+
 	ReadExact(
-		expectation string,
+		expectation []rune,
 		kind FragmentKind,
 	) (
 		token *Token,
 		matched bool,
 		err error,
 	)
+
+	ReadUntil(
+		fn func(Cursor) uint,
+		kind FragmentKind,
+	) (
+		token *Token,
+		err error,
+	)
+
 	Position() Cursor
+
 	Set(Cursor)
 }
 
@@ -53,6 +64,8 @@ func (pr Parser) handlePattern(
 		return pr.parseTermExact(scanner, pt)
 	case Checked:
 		return pr.parseChecked(scanner, pt)
+	case Lexed:
+		return pr.parseLexed(scanner, pt)
 	case ZeroOrMore:
 		// ZeroOrMore
 		return pr.parseZeroOrMore(scanner, pt.Pattern)
@@ -90,6 +103,24 @@ func (pr Parser) parseChecked(
 			At:       beforeCr,
 			Expected: expected,
 			Actual:   tk,
+		}
+	}
+	return tk, nil
+}
+
+func (pr Parser) parseLexed(
+	scanner *Scanner,
+	expected Lexed,
+) (Fragment, error) {
+	beforeCr := scanner.Lexer.Position()
+	tk, err := scanner.ReadUntil(expected.Fn, expected.Kind)
+	if err != nil {
+		return nil, err
+	}
+	if tk == nil {
+		return nil, &ErrUnexpectedToken{
+			At:       beforeCr,
+			Expected: expected,
 		}
 	}
 	return tk, nil

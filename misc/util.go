@@ -1,6 +1,6 @@
 package misc
 
-func isLineBreak(source string, index uint) int {
+func isLineBreak(source []rune, index uint) int {
 	switch source[index] {
 	case '\n':
 		return 1
@@ -13,7 +13,7 @@ func isLineBreak(source string, index uint) int {
 	return -1
 }
 
-func isSpecialChar(bt byte) bool {
+func isSpecialChar(bt rune) bool {
 	if bt >= 0x21 && bt <= 0x2F {
 		// ! " # $ % & ' ( ) * + , - . /
 		return true
@@ -33,7 +33,7 @@ func isSpecialChar(bt byte) bool {
 	return false
 }
 
-func isSpace(bt byte) bool {
+func isSpace(bt rune) bool {
 	if bt == ' ' || bt == '\t' {
 		// whitespace or tab
 		return true

@@ -24,9 +24,9 @@ func (tk *Token) Begin() Cursor { return tk.VBegin }
 func (tk *Token) End() Cursor { return tk.VEnd }
 
 // Src returns the source code of the token fragment
-func (tk *Token) Src() string {
+func (tk *Token) Src() []rune {
 	if tk == nil {
-		return ""
+		return nil
 	}
 	return tk.VBegin.File.Src[tk.VBegin.Index:tk.VEnd.Index]
 }
@@ -46,6 +46,6 @@ func (tk *Token) String() string {
 		fileName,
 		tk.VBegin.Line, tk.VBegin.Column,
 		tk.VEnd.Line, tk.VEnd.Column,
-		tk.Src(),
+		string(tk.Src()),
 	)
 }

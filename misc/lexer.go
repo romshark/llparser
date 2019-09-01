@@ -160,7 +160,7 @@ func (lx *Lexer) Read() (*parser.Token, error) {
 // ReadExact tries to read an exact string and returns false if
 // str couldn't have been matched
 func (lx *Lexer) ReadExact(
-	expectation string,
+	expectation []rune,
 	kind parser.FragmentKind,
 ) (
 	token *parser.Token,
@@ -182,10 +182,10 @@ func (lx *Lexer) ReadExact(
 		}
 
 		// Check against the expectation
-		bt := lx.cr.File.Src[lx.cr.Index]
+		rn := lx.cr.File.Src[lx.cr.Index]
 
 		// Advance the cursor
-		switch bt {
+		switch rn {
 		case '\n':
 			lx.cr.Index++
 			lx.cr.Column = 1
@@ -195,11 +195,60 @@ func (lx *Lexer) ReadExact(
 			lx.cr.Column++
 		}
 
-		if bt != expectation[ix] {
+		if rn != expectation[ix] {
 			// No match
 			return finalizedToken(token, lx.cr), false, nil
 		}
 	}
 
 	return finalizedToken(token, lx.cr), true, nil
+}
+
+// ReadUntil reads until fn returns zero skipping as many runes as fn returns
+func (lx *Lexer) ReadUntil(
+	fn func(parser.Cursor) uint,
+	kind parser.FragmentKind,
+) (
+	token *parser.Token,
+	err error,
+) {
+	token = &parser.Token{
+		VKind:  kind,
+		VBegin: lx.cr,
+	}
+
+	for {
+		if lx.reachedEOF() {
+			return finalizedToken(token, lx.cr), nil
+		}
+
+		skip := fn(lx.cr)
+		if skip < 1 {
+			break
+		}
+		for ix2 := uint(0); ix2 < skip; {
+			if lx.reachedEOF() {
+				return finalizedToken(token, lx.cr), nil
+			}
+
+			// Check against the expectation
+			skipSpace := isLineBreak(lx.cr.File.Src, lx.cr.Index)
+
+			// Advance the cursor
+			if skipSpace != -1 {
+				// Space character
+				lx.cr.Index += uint(skipSpace)
+				lx.cr.Column = 1
+				lx.cr.Line++
+				ix2 += uint(skipSpace)
+			} else {
+				// Non-space character
+				lx.cr.Index++
+				lx.cr.Column++
+				ix2++
+			}
+		}
+	}
+
+	return finalizedToken(token, lx.cr), nil
 }

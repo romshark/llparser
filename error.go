@@ -22,7 +22,7 @@ type ErrUnexpectedToken struct {
 func (err *ErrUnexpectedToken) Error() string {
 	actualStr := "<nil>"
 	if err.Actual != nil {
-		actualStr = err.Actual.Src()
+		actualStr = string(err.Actual.Src())
 	}
 	if err.Expected == nil {
 		return fmt.Sprintf(

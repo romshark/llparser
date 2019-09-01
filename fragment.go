@@ -8,6 +8,6 @@ type Fragment interface {
 	Kind() FragmentKind
 	Begin() Cursor
 	End() Cursor
-	Src() string
+	Src() []rune
 	Elements() []Fragment
 }

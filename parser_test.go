@@ -17,13 +17,24 @@ const (
 	TestFrBar
 )
 
+func rncmp(a, b []rune) bool {
+	for i, x := range b {
+		if a[i] != x {
+			return false
+		}
+	}
+	return true
+}
+
 // Basic terminal types
 var (
 	testR_foo = &parser.Rule{
 		Designation: "keyword foo",
 		Pattern: parser.Checked{
 			Designation: "keyword foo",
-			Fn:          func(src string) bool { return src == "foo" },
+			Fn: func(src []rune) bool {
+				return rncmp(src, []rune("foo"))
+			},
 		},
 		Kind: TestFrFoo,
 	}
@@ -31,7 +42,9 @@ var (
 		Designation: "keyword bar",
 		Pattern: parser.Checked{
 			Designation: "keyword bar",
-			Fn:          func(src string) bool { return src == "bar" },
+			Fn: func(src []rune) bool {
+				return rncmp(src, []rune("bar"))
+			},
 		},
 		Kind: TestFrBar,
 	}
@@ -40,7 +53,7 @@ var (
 func newLexer(src string) parser.Lexer {
 	return misc.NewLexer(&parser.SourceFile{
 		Name: "test.txt",
-		Src:  src,
+		Src:  []rune(src),
 	})
 }
 
@@ -144,7 +157,7 @@ func TestParserSequenceErr(t *testing.T) {
 			Pattern: parser.Sequence{
 				parser.TermExact{
 					Kind:        TestFrBar,
-					Expectation: "bar",
+					Expectation: []rune("bar"),
 				},
 				testR_foo,
 			},
@@ -170,7 +183,9 @@ func TestParserSequenceErr(t *testing.T) {
 				parser.Term(misc.FrSpace),
 				parser.Checked{
 					Designation: "checked token",
-					Fn:          func(str string) bool { return str == "bar" },
+					Fn: func(str []rune) bool {
+						return rncmp(str, []rune("bar"))
+					},
 				},
 			},
 			Kind: expectedKind,
@@ -245,8 +260,8 @@ func TestParserChecked(t *testing.T) {
 	expectedKind := parser.FragmentKind(100)
 	mainFrag, err := pr.Parse(lx, &parser.Rule{
 		Designation: "keyword 'example'",
-		Pattern: parser.Checked{"keyword 'example'", func(str string) bool {
-			return str == "example"
+		Pattern: parser.Checked{"keyword 'example'", func(str []rune) bool {
+			return rncmp(str, []rune("example"))
 		}},
 		Kind: expectedKind,
 	})
@@ -267,8 +282,8 @@ func TestParserCheckedErr(t *testing.T) {
 	expectedKind := parser.FragmentKind(100)
 	mainFrag, err := pr.Parse(lx, &parser.Rule{
 		Designation: "keyword 'example'",
-		Pattern: parser.Checked{"keyword 'example'", func(str string) bool {
-			return str == "example"
+		Pattern: parser.Checked{"keyword 'example'", func(str []rune) bool {
+			return rncmp(str, []rune("example"))
 		}},
 		Kind: expectedKind,
 	})
@@ -581,7 +596,7 @@ func TestParserAction(t *testing.T) {
 	ruleA := &parser.Rule{
 		Designation: "a",
 		Kind:        aKind,
-		Pattern:     parser.TermExact{misc.FrWord, "a"},
+		Pattern:     parser.TermExact{misc.FrWord, []rune("a")},
 		Action: func(f parser.Fragment) error {
 			aFrags = append(aFrags, f)
 			return nil
@@ -591,7 +606,7 @@ func TestParserAction(t *testing.T) {
 	ruleB := &parser.Rule{
 		Designation: "b",
 		Kind:        bKind,
-		Pattern:     parser.TermExact{misc.FrWord, "b"},
+		Pattern:     parser.TermExact{misc.FrWord, []rune("b")},
 		Action: func(f parser.Fragment) error {
 			bFrags = append(bFrags, f)
 			return nil
@@ -628,7 +643,7 @@ func TestParserActionErr(t *testing.T) {
 	mainFrag, err := pr.Parse(lx, &parser.Rule{
 		Designation: "a",
 		Kind:        900,
-		Pattern:     parser.TermExact{misc.FrWord, "a"},
+		Pattern:     parser.TermExact{misc.FrWord, []rune("a")},
 		Action: func(f parser.Fragment) error {
 			return expectedErr
 		},
@@ -641,5 +656,60 @@ func TestParserActionErr(t *testing.T) {
 	require.Equal(t, uint(0), er.At.Index)
 	require.Equal(t, uint(1), er.At.Line)
 	require.Equal(t, uint(1), er.At.Column)
+	require.Nil(t, mainFrag)
+}
+
+func TestParserLexed(t *testing.T) {
+	fn := func(crs parser.Cursor) uint {
+		rn := crs.File.Src[crs.Index]
+		if (rn >= 0x0410 && rn <= 0x044F) || rn == '\n' {
+			return 1
+		}
+		return 0
+	}
+	expectedKind := parser.FragmentKind(100)
+
+	pr := parser.NewParser()
+	lx := newLexer("абв\nгде")
+	mainFrag, err := pr.Parse(lx, &parser.Rule{
+		Pattern: parser.Lexed{
+			Kind:        expectedKind,
+			Designation: "lexed token",
+			Fn:          fn,
+		},
+		Kind: expectedKind,
+	})
+
+	require.NoError(t, err)
+	checkFrag(t, lx, mainFrag, expectedKind, C{1, 1}, C{2, 4}, 1)
+
+	// Check elements
+	elems := mainFrag.Elements()
+
+	checkFrag(t, lx, elems[0], expectedKind, C{1, 1}, C{2, 4}, 0)
+}
+
+func TestParserLexedErr(t *testing.T) {
+	fn := func(crs parser.Cursor) uint {
+		rn := crs.File.Src[crs.Index]
+		if (rn >= 0x0410 && rn <= 0x044F) || rn == '\n' {
+			return 1
+		}
+		return 0
+	}
+	expectedKind := parser.FragmentKind(100)
+
+	pr := parser.NewParser()
+	lx := newLexer("abc")
+	mainFrag, err := pr.Parse(lx, &parser.Rule{
+		Pattern: parser.Lexed{
+			Kind:        expectedKind,
+			Designation: "lexed token",
+			Fn:          fn,
+		},
+		Kind: expectedKind,
+	})
+
+	require.Error(t, err)
 	require.Nil(t, mainFrag)
 }
