@@ -43,9 +43,9 @@ func Parse(filePath string) (*ModelDicks, error) {
 		Kind:        FrShaft,
 		Pattern: parser.OneOrMore{
 			Pattern: parser.Either{
-				parser.TermExact{Kind: misc.FrSign, Expectation: "="},
-				parser.TermExact{Kind: misc.FrSign, Expectation: ":"},
-				parser.TermExact{Kind: misc.FrWord, Expectation: "x"},
+				parser.TermExact{Kind: misc.FrSign, Expectation: []rune("=")},
+				parser.TermExact{Kind: misc.FrSign, Expectation: []rune(":")},
+				parser.TermExact{Kind: misc.FrWord, Expectation: []rune("x")},
 			},
 		},
 	}
@@ -55,11 +55,11 @@ func Parse(filePath string) (*ModelDicks, error) {
 		Kind:        FrDick,
 		Pattern: parser.Sequence{
 			parser.Either{
-				parser.TermExact{Kind: FrBalls, Expectation: "8"},
-				parser.TermExact{Kind: FrBalls, Expectation: "B"},
+				parser.TermExact{Kind: FrBalls, Expectation: []rune("8")},
+				parser.TermExact{Kind: FrBalls, Expectation: []rune("B")},
 			},
 			ruleShaft,
-			parser.TermExact{Kind: FrHead, Expectation: ">"},
+			parser.TermExact{Kind: FrHead, Expectation: []rune(">")},
 		},
 		Action: mod.onDickDetected,
 	}
@@ -68,11 +68,11 @@ func Parse(filePath string) (*ModelDicks, error) {
 		Designation: "dick(left)",
 		Kind:        FrDick,
 		Pattern: parser.Sequence{
-			parser.TermExact{Kind: FrHead, Expectation: "<"},
+			parser.TermExact{Kind: FrHead, Expectation: []rune("<")},
 			ruleShaft,
 			parser.Either{
-				parser.TermExact{Kind: FrBalls, Expectation: "8"},
-				parser.TermExact{Kind: FrBalls, Expectation: "3"},
+				parser.TermExact{Kind: FrBalls, Expectation: []rune("8")},
+				parser.TermExact{Kind: FrBalls, Expectation: []rune("3")},
 			},
 		},
 		Action: mod.onDickDetected,
@@ -98,7 +98,7 @@ func Parse(filePath string) (*ModelDicks, error) {
 	par := parser.NewParser()
 	lex := misc.NewLexer(&parser.SourceFile{
 		Name: filePath,
-		Src:  string(bt),
+		Src:  []rune(string(bt)),
 	})
 
 	// Parse the source file

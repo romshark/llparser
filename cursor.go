@@ -5,7 +5,7 @@ import "fmt"
 // SourceFile represents a source file
 type SourceFile struct {
 	Name string
-	Src  string
+	Src  []rune
 }
 
 // Cursor represents a source-code location
