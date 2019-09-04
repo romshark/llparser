@@ -25,14 +25,14 @@ func TestParser(t *testing.T) {
 
 	require.Len(t, mod.Dicks, 9)
 
-	require.Equal(t, mod.Dicks[0].Frag.Src(), "B===>")
-	require.Equal(t, mod.Dicks[1].Frag.Src(), "8==>")
-	require.Equal(t, mod.Dicks[2].Frag.Src(), "B::>")
-	require.Equal(t, mod.Dicks[3].Frag.Src(), "<====8")
-	require.Equal(t, mod.Dicks[4].Frag.Src(), "<::::::3")
-	require.Equal(t, mod.Dicks[5].Frag.Src(), "8xxxx>")
-	require.Equal(t, mod.Dicks[6].Frag.Src(), "8xxx=xxx>")
-	require.Equal(t, mod.Dicks[7].Frag.Src(), "B:x:=:x>")
-	require.Equal(t, mod.Dicks[8].Frag.Src(), "<:=3")
+	require.Equal(t, mod.Dicks[0].Frag.Src(), []rune("B===>"))
+	require.Equal(t, mod.Dicks[1].Frag.Src(), []rune("8==>"))
+	require.Equal(t, mod.Dicks[2].Frag.Src(), []rune("B::>"))
+	require.Equal(t, mod.Dicks[3].Frag.Src(), []rune("<====8"))
+	require.Equal(t, mod.Dicks[4].Frag.Src(), []rune("<::::::3"))
+	require.Equal(t, mod.Dicks[5].Frag.Src(), []rune("8xxxx>"))
+	require.Equal(t, mod.Dicks[6].Frag.Src(), []rune("8xxx=xxx>"))
+	require.Equal(t, mod.Dicks[7].Frag.Src(), []rune("B:x:=:x>"))
+	require.Equal(t, mod.Dicks[8].Frag.Src(), []rune("<:=3"))
 
 }
