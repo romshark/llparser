@@ -35,7 +35,7 @@ func (tm Term) Desig() string {
 // TermExact represents an exact terminal token pattern
 type TermExact struct {
 	Kind        FragmentKind
-	Expectation string
+	Expectation []rune
 }
 
 // Container implements the Pattern interface
@@ -45,12 +45,14 @@ func (TermExact) Container() bool { return false }
 func (TermExact) TerminalPattern() Pattern { return nil }
 
 // Desig implements the Pattern interface
-func (tm TermExact) Desig() string { return "'" + tm.Expectation + "'" }
+func (tm TermExact) Desig() string {
+	return "'" + string(tm.Expectation) + "'"
+}
 
 // Checked represents an arbitrary terminal token pattern matched by a function
 type Checked struct {
 	Designation string
-	Fn          func(string) bool
+	Fn          func([]rune) bool
 }
 
 // Container implements the Pattern interface
@@ -61,6 +63,22 @@ func (Checked) TerminalPattern() Pattern { return nil }
 
 // Desig implements the Pattern interface
 func (ck Checked) Desig() string { return ck.Designation }
+
+// Lexed represents a lexed pattern
+type Lexed struct {
+	Kind        FragmentKind
+	Designation string
+	Fn          func(Cursor) uint
+}
+
+// Container implements the Pattern interface
+func (Lexed) Container() bool { return false }
+
+// TerminalPattern implements the Pattern interface
+func (Lexed) TerminalPattern() Pattern { return nil }
+
+// Desig implements the Pattern interface
+func (ck Lexed) Desig() string { return ck.Designation }
 
 // Optional represents an arbitrary optional pattern
 type Optional struct{ Pattern }

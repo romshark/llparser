@@ -47,6 +47,6 @@ func main() {
 	// Print all parsed dicks
 	fmt.Printf("%d dicks parsed:\n", len(mod.Dicks))
 	for ix, dick := range mod.Dicks {
-		fmt.Printf(" %d: %s\n", ix, dick.Frag.Src())
+		fmt.Printf(" %d: %s\n", ix, string(dick.Frag.Src()))
 	}
 }
