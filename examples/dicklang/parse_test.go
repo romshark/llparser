@@ -17,9 +17,7 @@ func TestParser(t *testing.T) {
 	 <:=3
 	`
 	mod, err := Parse("sample.dicklang", []rune(src))
-	if err != nil {
-		t.Log("ERR: ", err)
-	}
+	require.NoError(t, err)
 	require.Len(t, mod.Dicks, 9)
 	require.Equal(t, mod.Dicks[0].Frag.Src(), []rune("B===>"))
 	require.Equal(t, mod.Dicks[1].Frag.Src(), []rune("8==>"))
