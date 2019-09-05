@@ -18,7 +18,7 @@ func TestParser(t *testing.T) {
 	 <:=3
 	`
 
-	mod, err := Parse("sample.dicklang", src)
+	mod, err := Parse("sample.dicklang", []rune(src))
 	if err != nil {
 		t.Log("ERR: ", err)
 	}
