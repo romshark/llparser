@@ -7,7 +7,6 @@ import (
 )
 
 func TestParser(t *testing.T) {
-	// Change the source code however you like
 	var src = `
 	B===> 8==>  B::>
 		<====8 <::::::3
