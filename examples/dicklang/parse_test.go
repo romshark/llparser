@@ -1,4 +1,3 @@
-// This is an example for the github.com/romshark/llparser library
 package main
 
 import (
