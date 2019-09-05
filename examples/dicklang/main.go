@@ -23,18 +23,15 @@ var flagPrintParseTree = flag.Bool(
 
 func main() {
 	flag.Parse()
-
 	// Read the source file into memory
 	bt, err := ioutil.ReadFile(*flagFilePath)
 	if err != nil {
 		log.Fatal("ERR: ", err)
 	}
-
 	mod, err := Parse(*flagFilePath, []rune(string(bt)))
 	if err != nil {
 		log.Fatal("ERR: ", err)
 	}
-
 	if *flagPrintParseTree {
 		// Print the parse-tree only
 		_, err := parser.PrintFragment(mod.Frag, os.Stdout, "  ")
@@ -43,7 +40,6 @@ func main() {
 		}
 		return
 	}
-
 	// Print all parsed dicks
 	fmt.Printf("%d dicks parsed:\n", len(mod.Dicks))
 	for ix, dick := range mod.Dicks {

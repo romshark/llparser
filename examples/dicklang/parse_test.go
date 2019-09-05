@@ -16,14 +16,11 @@ func TestParser(t *testing.T) {
 		B:x:=:x>
 	 <:=3
 	`
-
 	mod, err := Parse("sample.dicklang", []rune(src))
 	if err != nil {
 		t.Log("ERR: ", err)
 	}
-
 	require.Len(t, mod.Dicks, 9)
-
 	require.Equal(t, mod.Dicks[0].Frag.Src(), []rune("B===>"))
 	require.Equal(t, mod.Dicks[1].Frag.Src(), []rune("8==>"))
 	require.Equal(t, mod.Dicks[2].Frag.Src(), []rune("B::>"))
@@ -33,5 +30,4 @@ func TestParser(t *testing.T) {
 	require.Equal(t, mod.Dicks[6].Frag.Src(), []rune("8xxx=xxx>"))
 	require.Equal(t, mod.Dicks[7].Frag.Src(), []rune("B:x:=:x>"))
 	require.Equal(t, mod.Dicks[8].Frag.Src(), []rune("<:=3"))
-
 }
