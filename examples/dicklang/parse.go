@@ -1,8 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
-
 	parser "github.com/romshark/llparser"
 	"github.com/romshark/llparser/misc"
 )
@@ -27,12 +25,7 @@ const (
 )
 
 // Parse parses a dick-lang file
-func Parse(filePath string) (*ModelDicks, error) {
-	// Read the source file into memory
-	bt, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		return nil, err
-	}
+func Parse(fileName string, source []rune) (*ModelDicks, error) {
 
 	// Initialize model
 	mod := &ModelDicks{}
@@ -97,8 +90,8 @@ func Parse(filePath string) (*ModelDicks, error) {
 	// Initialize lexer and parser
 	par := parser.NewParser()
 	lex := misc.NewLexer(&parser.SourceFile{
-		Name: filePath,
-		Src:  []rune(string(bt)),
+		Name: fileName,
+		Src:  source,
 	})
 
 	// Parse the source file
