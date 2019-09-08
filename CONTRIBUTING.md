@@ -109,7 +109,7 @@ you agree that your contributions will be licensed under its [BSD 3-Clause Licen
 ## Contact
 Feel free to contact the core repository maintainers when necessary:
 - [Roman Sharkov](https://github.com/romshark)
-	- **Email**: [roman.sharkov@qbeon.com](mailto:roman.sharkov@qbeon.com), [sharkov@fitcat.com](mailto:sharkov@fitcat.pro)
+	- **Email**: [roman.scharkov@gmail.com](mailto:roman.scharkov@gmail.com)
 	- [**Gophers@Slack:** Roman Sharkov (romshark)](https://gophers.slack.com)
 	- [**GolangRussian@Slack:** Roman Sharkov (romshark)](https://golang-ru.slack.com)
 	- [**Telegram**: @Romshark](t.me/Romshark)

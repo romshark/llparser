@@ -37,7 +37,7 @@ func (sc *Scanner) Read() (*Token, error) {
 // ReadExact advances the scanner by 1 exact token returning either the read
 // fragment or nil if the expectation didn't match
 func (sc *Scanner) ReadExact(
-	expectation string,
+	expectation []rune,
 	kind FragmentKind,
 ) (*Token, bool, error) {
 	nx, match, err := sc.Lexer.ReadExact(expectation, kind)
@@ -49,6 +49,23 @@ func (sc *Scanner) ReadExact(
 	}
 	sc.Records = append(sc.Records, nx)
 	return nx, match, nil
+}
+
+// ReadUntil advances the scanner by 1 exact token returning either the read
+// fragment or nil if the expectation didn't match
+func (sc *Scanner) ReadUntil(
+	fn func(Cursor) uint,
+	kind FragmentKind,
+) (*Token, error) {
+	nx, err := sc.Lexer.ReadUntil(fn, kind)
+	if err != nil {
+		return nil, err
+	}
+	if nx == nil {
+		return nil, nil
+	}
+	sc.Records = append(sc.Records, nx)
+	return nx, nil
 }
 
 // Append appends a fragment to the records
