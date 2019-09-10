@@ -38,7 +38,7 @@ const (
 
 // Parse parses a dick-lang file
 // This parser was written with the JSON RFC Spec (https://tools.ietf.org/html/rfc7159) as reference
-func Parse(source string) (*ModelJSON, error) {
+func Parse(fileName string, source []rune) (*ModelJSON, error) {
 
 	// Initialize model
 	mod := &ModelJSON{}
@@ -49,7 +49,7 @@ func Parse(source string) (*ModelJSON, error) {
 		Designation: "null",
 		Kind:        FrNull,
 		Pattern: parser.TermExact{
-			Kind: misc.FrWord, Expectation: "null",
+			Kind: misc.FrWord, Expectation: []rune("null"),
 		},
 	}
 
@@ -138,7 +138,7 @@ func Parse(source string) (*ModelJSON, error) {
 	// Initialize lexer and parser
 	par := parser.NewParser()
 	lex := misc.NewLexer(&parser.SourceFile{
-		Name: "json sample",
+		Name: fileName,
 		Src:  source,
 	})
 

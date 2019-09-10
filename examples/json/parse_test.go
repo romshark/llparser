@@ -1,47 +1,25 @@
-// This is an example for the github.com/romshark/llparser library
 package main
 
 import (
-	"fmt"
-	"log"
-	"os"
 	"testing"
 
-	parser "github.com/romshark/llparser"
-	_ "github.com/romshark/llparser/misc"
+	"github.com/stretchr/testify/require"
 )
 
-// Set printParseTree to true to print the parse-tree
-// instead of the model
-var printParseTree = false
-
 func TestParser(t *testing.T) {
-
-	// Change the source code however you like
 	var src = `
-	"demo"
-	`
-	mod, err := Parse(src)
-	if err != nil {
-		log.Fatal("ERR: ", err)
-	}
-
-	if printParseTree {
-		// Print the parse-tree only
-		_, err := parser.PrintFragment(mod.Frag, os.Stdout, "  ")
-		if err != nil {
-			log.Fatal(err)
-		}
-		return
-	}
-	l := len(mod.JSON)
-	if l != 9 {
-		t.Errorf("Number of Dicks parsed was incorrect , got: %d, want: %d.", l, 1)
-	}
-
-	// Print all parsed dicks
-	fmt.Printf("%d JSON parsed:\n", l)
-	// for ix, dick := range mod.Dicks {
-	// 	fmt.Printf(" %d: %s\n", ix, dick.Frag.Src())
-	// }
+    null
+		`
+	mod, err := Parse("test.json", []rune(src))
+	require.NoError(t, err)
+	require.Len(t, mod.JSON, 1)
+	// require.Equal(t, "B===>", string(mod.Dicks[0].Frag.Src()))
+	// require.Equal(t, "8==>", string(mod.Dicks[1].Frag.Src()))
+	// require.Equal(t, "B::>", string(mod.Dicks[2].Frag.Src()))
+	// require.Equal(t, "<====8", string(mod.Dicks[3].Frag.Src()))
+	// require.Equal(t, "<::::::3", string(mod.Dicks[4].Frag.Src()))
+	// require.Equal(t, "8xxxx>", string(mod.Dicks[5].Frag.Src()))
+	// require.Equal(t, "8xxx=xxx>", string(mod.Dicks[6].Frag.Src()))
+	// require.Equal(t, "B:x:=:x>", string(mod.Dicks[7].Frag.Src()))
+	// require.Equal(t, "<:=3", string(mod.Dicks[8].Frag.Src()))
 }
