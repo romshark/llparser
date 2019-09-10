@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	parser "github.com/romshark/llparser"
 )
 
@@ -19,17 +17,9 @@ type ModelJSONObject struct {
 }
 
 func (mod *ModelJSON) onJSONDetected(frag parser.Fragment) error {
-	shaftLength := uint(len(frag.Elements()[1].Elements()))
+	shaftLength := uint(len(frag.Elements()[0].Elements()))
 
-	// Check dick length
-	if shaftLength < 2 {
-		return fmt.Errorf(
-			"sorry, Improper JSON format (%d/2)",
-			shaftLength,
-		)
-	}
-
-	// Register the newly json structure
+	// Register the new json object
 	mod.JSON = append(mod.JSON, ModelJSONObject{
 		Frag:        frag,
 		ShaftLength: shaftLength,

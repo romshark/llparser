@@ -30,7 +30,7 @@ func main() {
 		log.Fatal("ERR: ", err)
 	}
 
-	mod, err := Parse(string(bt))
+	mod, err := Parse(*flagFilePath, []rune(string(bt)))
 	if err != nil {
 		log.Fatal("ERR: ", err)
 	}
@@ -47,6 +47,6 @@ func main() {
 	// Print all parsed dicks
 	fmt.Printf("%d JSON parsed:\n", len(mod.JSON))
 	for ix, json := range mod.JSON {
-		fmt.Printf(" %d: %s\n", ix, json.Frag.Src())
+		fmt.Printf(" %d: %s\n", ix, string(json.Frag.Src()))
 	}
 }

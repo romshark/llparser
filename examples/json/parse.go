@@ -46,11 +46,13 @@ func Parse(fileName string, source []rune) (*ModelJSON, error) {
 	// Define the grammar
 
 	ruleNull := &parser.Rule{
-		Designation: "null",
+		Designation: "Rule for null",
 		Kind:        FrNull,
 		Pattern: parser.TermExact{
-			Kind: misc.FrWord, Expectation: []rune("null"),
+			Kind:        misc.FrWord,
+			Expectation: []rune("null"),
 		},
+		Action: mod.onJSONDetected,
 	}
 
 	// ruleString := &parser.Rule{
@@ -121,17 +123,8 @@ func Parse(fileName string, source []rune) (*ModelJSON, error) {
 
 	ruleFile := &parser.Rule{
 		Designation: "file",
-		Pattern: parser.Sequence{
-			parser.Optional{Pattern: parser.Term(misc.FrSpace)},
-			parser.ZeroOrMore{
-				Pattern: parser.Sequence{
-					parser.Either{
-						ruleNull,
-					},
-					parser.Optional{Pattern: parser.Term(misc.FrSpace)},
-				},
-			},
-			parser.Optional{Pattern: parser.Term(misc.FrSpace)},
+		Pattern: parser.Either{
+			ruleNull,
 		},
 	}
 
