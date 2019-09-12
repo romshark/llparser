@@ -19,15 +19,6 @@ const (
 	FrBar
 )
 
-func rncmp(a, b []rune) bool {
-	for i, x := range b {
-		if a[i] != x {
-			return false
-		}
-	}
-	return true
-}
-
 // Basic terminal types
 var (
 	termSpace = parser.Lexed{
