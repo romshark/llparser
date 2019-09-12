@@ -54,18 +54,18 @@ var (
 		},
 		Kind: FrWord,
 	}
-	termSeparator = parser.TermExact{
+	termSeparator = parser.Exact{
 		Expectation: []rune(","),
 		Kind:        FrSeparator,
 	}
 	testR_foo = &parser.Rule{
 		Designation: "keyword foo",
-		Pattern:     parser.TermExact{Expectation: []rune("foo")},
+		Pattern:     parser.Exact{Expectation: []rune("foo")},
 		Kind:        FrFoo,
 	}
 	testR_bar = &parser.Rule{
 		Designation: "keyword bar",
-		Pattern:     parser.TermExact{Expectation: []rune("bar")},
+		Pattern:     parser.Exact{Expectation: []rune("bar")},
 		Kind:        FrBar,
 	}
 )
@@ -175,7 +175,7 @@ func TestParserSequenceErr(t *testing.T) {
 		mainFrag, err := pr.Parse(src, &parser.Rule{
 			Designation: "foobar",
 			Pattern: parser.Sequence{
-				parser.TermExact{
+				parser.Exact{
 					Kind:        FrBar,
 					Expectation: []rune("bar"),
 				},
@@ -575,7 +575,7 @@ func TestParserAction(t *testing.T) {
 	ruleA := &parser.Rule{
 		Designation: "a",
 		Kind:        aKind,
-		Pattern:     parser.TermExact{FrWord, []rune("a")},
+		Pattern:     parser.Exact{FrWord, []rune("a")},
 		Action: func(f parser.Fragment) error {
 			aFrags = append(aFrags, f)
 			return nil
@@ -585,7 +585,7 @@ func TestParserAction(t *testing.T) {
 	ruleB := &parser.Rule{
 		Designation: "b",
 		Kind:        bKind,
-		Pattern:     parser.TermExact{FrWord, []rune("b")},
+		Pattern:     parser.Exact{FrWord, []rune("b")},
 		Action: func(f parser.Fragment) error {
 			bFrags = append(bFrags, f)
 			return nil
@@ -622,7 +622,7 @@ func TestParserActionErr(t *testing.T) {
 	mainFrag, err := pr.Parse(src, &parser.Rule{
 		Designation: "a",
 		Kind:        900,
-		Pattern:     parser.TermExact{FrWord, []rune("a")},
+		Pattern:     parser.Exact{FrWord, []rune("a")},
 		Action: func(f parser.Fragment) error {
 			return expectedErr
 		},

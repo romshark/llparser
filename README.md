@@ -31,7 +31,7 @@ A grammar always begins with a root rule. A rule is a [non-terminal symbol](http
 mainRule := &llparser.Rule{
 	Designation: "name of the rule",
 	Kind: 100,
-	Pattern: llparser.TermExact{
+	Pattern: llparser.Exact{
 		Kind:        101,
 		Expectation: []rune("string"),
 	},
@@ -49,7 +49,7 @@ mainRule := &llparser.Rule{
 Rules can be nested:
 ```go
 ruleTwo := &llparser.Rule{
-	Pattern: llparser.TermExact{
+	Pattern: llparser.Exact{
 		Kind:        101,
 		Expectation: []rune("string"),
 	},
@@ -65,18 +65,18 @@ Rules can also recurse:
 ```go
 rule := &llparser.Rule{Kind: 1}
 rule.Pattern = llparser.Sequence{
-	llparser.TermExact{Expectation: "="},
+	llparser.Exact{Expectation: "="},
 	llparser.Optional{Pattern: rule}, // potential recursion
 }
 ```
 
 ### Terminals
 
-#### Pattern: TermExact
-`TermExact` expects a particular sequence of characters to be lexed:
+#### Pattern: Exact
+`Exact` expects a particular sequence of characters to be lexed:
 
 ```go
-Pattern: llparser.TermExact{
+Pattern: llparser.Exact{
 	Kind:        SomeKindConstant,
 	Expectation: []rune("some string"),
 },
@@ -118,7 +118,7 @@ Pattern: llparser.Sequence{
 	somePattern,
 	llparser.Term(SomeKindConstant),
 	llparser.Optional{
-		Pattern: llparser.TermExact{
+		Pattern: llparser.Exact{
 			Kind:        SomeKindConstant,
 			Expectation: "foo",
 		},

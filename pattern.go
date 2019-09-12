@@ -17,20 +17,20 @@ type Pattern interface {
 	Desig() string
 }
 
-// TermExact represents an exact terminal token pattern
-type TermExact struct {
+// Exact represents an exact terminal token pattern
+type Exact struct {
 	Kind        FragmentKind
 	Expectation []rune
 }
 
 // Container implements the Pattern interface
-func (TermExact) Container() bool { return false }
+func (Exact) Container() bool { return false }
 
 // TerminalPattern implements the Pattern interface
-func (TermExact) TerminalPattern() Pattern { return nil }
+func (Exact) TerminalPattern() Pattern { return nil }
 
 // Desig implements the Pattern interface
-func (tm TermExact) Desig() string {
+func (tm Exact) Desig() string {
 	return "'" + string(tm.Expectation) + "'"
 }
 

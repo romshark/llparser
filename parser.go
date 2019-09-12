@@ -30,7 +30,7 @@ func (pr Parser) handlePattern(
 			return nil, err
 		}
 		return tk, nil
-	case TermExact:
+	case Exact:
 		// Exact terminal
 		return pr.parseTermExact(scan, pt)
 	case Lexed:
@@ -200,7 +200,7 @@ func (pr Parser) parseEither(
 
 func (pr Parser) parseTermExact(
 	scanner *scanner,
-	exact TermExact,
+	exact Exact,
 ) (Fragment, error) {
 	beforeCr := scanner.Lexer.cr
 	tk, match, err := scanner.ReadExact(

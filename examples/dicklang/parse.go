@@ -59,9 +59,9 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 		Kind:        FrShaft,
 		Pattern: parser.OneOrMore{
 			Pattern: parser.Either{
-				parser.TermExact{Expectation: []rune("=")},
-				parser.TermExact{Expectation: []rune(":")},
-				parser.TermExact{Expectation: []rune("x")},
+				parser.Exact{Expectation: []rune("=")},
+				parser.Exact{Expectation: []rune(":")},
+				parser.Exact{Expectation: []rune("x")},
 			},
 		},
 	}
@@ -71,11 +71,11 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 		Kind:        FrDick,
 		Pattern: parser.Sequence{
 			parser.Either{
-				parser.TermExact{Kind: FrBalls, Expectation: []rune("8")},
-				parser.TermExact{Kind: FrBalls, Expectation: []rune("B")},
+				parser.Exact{Kind: FrBalls, Expectation: []rune("8")},
+				parser.Exact{Kind: FrBalls, Expectation: []rune("B")},
 			},
 			ruleShaft,
-			parser.TermExact{Kind: FrHead, Expectation: []rune(">")},
+			parser.Exact{Kind: FrHead, Expectation: []rune(">")},
 		},
 		Action: mod.onDickDetected,
 	}
@@ -84,11 +84,11 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 		Designation: "dick(left)",
 		Kind:        FrDick,
 		Pattern: parser.Sequence{
-			parser.TermExact{Kind: FrHead, Expectation: []rune("<")},
+			parser.Exact{Kind: FrHead, Expectation: []rune("<")},
 			ruleShaft,
 			parser.Either{
-				parser.TermExact{Kind: FrBalls, Expectation: []rune("8")},
-				parser.TermExact{Kind: FrBalls, Expectation: []rune("3")},
+				parser.Exact{Kind: FrBalls, Expectation: []rune("8")},
+				parser.Exact{Kind: FrBalls, Expectation: []rune("3")},
 			},
 		},
 		Action: mod.onDickDetected,

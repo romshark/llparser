@@ -14,11 +14,11 @@ func TestPrintFragment(t *testing.T) {
 	mainFrag, err := pr.Parse(src, &parser.Rule{
 		Kind: parser.FragmentKind(100),
 		Pattern: parser.Sequence{
-			parser.TermExact{
+			parser.Exact{
 				Kind:        parser.FragmentKind(101),
 				Expectation: []rune("abc"),
 			},
-			parser.TermExact{
+			parser.Exact{
 				Kind:        parser.FragmentKind(102),
 				Expectation: []rune("def"),
 			},
