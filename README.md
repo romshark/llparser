@@ -31,7 +31,7 @@ A grammar always begins with a root rule. A rule is a [non-terminal symbol](http
 mainRule := &llparser.Rule{
 	Designation: "name of the rule",
 	Kind: 100,
-	Pattern: llparser.TermExact{
+	Pattern: llparser.Exact{
 		Kind:        101,
 		Expectation: []rune("string"),
 	},
@@ -49,7 +49,7 @@ mainRule := &llparser.Rule{
 Rules can be nested:
 ```go
 ruleTwo := &llparser.Rule{
-	Pattern: llparser.TermExact{
+	Pattern: llparser.Exact{
 		Kind:        101,
 		Expectation: []rune("string"),
 	},
@@ -65,37 +65,20 @@ Rules can also recurse:
 ```go
 rule := &llparser.Rule{Kind: 1}
 rule.Pattern = llparser.Sequence{
-	llparser.TermExact{Expectation: "="},
+	llparser.Exact{Expectation: "="},
 	llparser.Optional{Pattern: rule}, // potential recursion
 }
 ```
 
 ### Terminals
 
-#### Pattern: Term
-`Term` expects a particular fragment kind to be lexed:
+#### Pattern: Exact
+`Exact` expects a particular sequence of characters to be lexed:
 
 ```go
-Pattern: llparser.Term(SomeKindConstant),
-```
-
-#### Pattern: TermExact
-`TermExact` expects a particular sequence of characters to be lexed:
-
-```go
-Pattern: llparser.TermExact{
+Pattern: llparser.Exact{
 	Kind:        SomeKindConstant,
 	Expectation: []rune("some string"),
-},
-```
-
-#### Pattern: Checked
-`Checked` expects the lexed fragment to pass an arbitrary user-defined validation function:
-
-```go
-Pattern: llparser.Checked{
-	Designation: "some checked terminal",
-	Fn:          func(str []rune) bool { return len(str) > 5 },
 },
 ```
 
@@ -135,7 +118,7 @@ Pattern: llparser.Sequence{
 	somePattern,
 	llparser.Term(SomeKindConstant),
 	llparser.Optional{
-		Pattern: llparser.TermExact{
+		Pattern: llparser.Exact{
 			Kind:        SomeKindConstant,
 			Expectation: "foo",
 		},
@@ -170,41 +153,6 @@ Pattern: llparser.Either{
 	anotherPattern,
 },
 ```
-### Lexer
-
-The lexer is an abstract part of the parser which [tokenizes](https://en.wikipedia.org/wiki/Lexical_analysis#Tokenization) the input stream:
-
-```go
-// Lexer defines the interface of an abstract lexer implementation
-type Lexer interface {
-	Read() (*Token, error)
-
-	ReadExact(
-		expectation []rune,
-		kind FragmentKind,
-	) (
-		token *Token,
-		matched bool,
-		err error,
-	)
-
-	ReadUntil(
-		fn func(Cursor) uint,
-		kind FragmentKind,
-	) (
-		token *Token,
-		err error,
-	)
-
-	Position() Cursor
-
-	Set(Cursor)
-}
-```
-
-A [default lexer implementation](https://github.com/romshark/llparser/tree/master/misc) is available out-of-the-box but sometimes implementing your own parser makes more sense. Some examples for when a custom lexer might be useful:
-- Sometimes you don't care how many white-spaces, tabs and line-breaks there are between the patterns you care about and thus it doesn't make any sense to make each individual space character a terminal leaf-node, instead the lexer would read a sequence of whitespaces, tabs and line-breaks as a single typed terminal node (in fact, this is the behavior of the default lexer implementation linked aboved, it will treat these kinds of sequences as `misc.FrSpace`) reducing the complexity of the resulting parse-tree.
-- If you want to disallow certain kinds of runes in the source code you can make the custom lexer implementation return an `ErrUnexpectedToken` error when approaching one.
 
 ### The Parse-Tree
 

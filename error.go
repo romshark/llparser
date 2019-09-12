@@ -16,24 +16,17 @@ func (err *Err) Error() string {
 type ErrUnexpectedToken struct {
 	At       Cursor
 	Expected Pattern
-	Actual   *Token
 }
 
 func (err *ErrUnexpectedToken) Error() string {
-	actualStr := "<nil>"
-	if err.Actual != nil {
-		actualStr = string(err.Actual.Src())
-	}
 	if err.Expected == nil {
 		return fmt.Sprintf(
-			"unexpected token '%s' at %s",
-			actualStr,
+			"unexpected token at %s",
 			err.At,
 		)
 	}
 	return fmt.Sprintf(
-		"unexpected token '%s', expected {%s} at %s",
-		actualStr,
+		"unexpected token, expected {%s} at %s",
 		err.Expected.Desig(),
 		err.At,
 	)

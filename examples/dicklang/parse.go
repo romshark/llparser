@@ -2,14 +2,16 @@ package main
 
 import (
 	parser "github.com/romshark/llparser"
-	"github.com/romshark/llparser/misc"
 )
 
 // FragKind represents a dick-lang fragment kind
-type FragKind parser.FragmentKind
+type FragKind = parser.FragmentKind
 
 const (
-	_ = misc.FrSign + iota
+	_ FragKind = iota
+
+	// FrSpace represents an arbitrary sequence of spaces, tabs and line-breaks
+	FrSpace
 
 	// FrBalls represents the balls
 	FrBalls
@@ -31,14 +33,35 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 	mod := &ModelDicks{}
 
 	// Define the grammar
+	termSpace := parser.Lexed{
+		Fn: func(crs parser.Cursor) uint {
+			switch crs.File.Src[crs.Index] {
+			case ' ':
+				return 1
+			case '\t':
+				return 1
+			case '\n':
+				return 1
+			case '\r':
+				next := crs.Index + 1
+				if next < uint(len(crs.File.Src)) &&
+					crs.File.Src[next] == '\n' {
+					return 2
+				}
+			}
+			return 0
+		},
+		Kind: FrSpace,
+	}
+
 	ruleShaft := &parser.Rule{
 		Designation: "shaft",
 		Kind:        FrShaft,
 		Pattern: parser.OneOrMore{
 			Pattern: parser.Either{
-				parser.TermExact{Kind: misc.FrSign, Expectation: []rune("=")},
-				parser.TermExact{Kind: misc.FrSign, Expectation: []rune(":")},
-				parser.TermExact{Kind: misc.FrWord, Expectation: []rune("x")},
+				parser.Exact{Expectation: []rune("=")},
+				parser.Exact{Expectation: []rune(":")},
+				parser.Exact{Expectation: []rune("x")},
 			},
 		},
 	}
@@ -48,11 +71,11 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 		Kind:        FrDick,
 		Pattern: parser.Sequence{
 			parser.Either{
-				parser.TermExact{Kind: FrBalls, Expectation: []rune("8")},
-				parser.TermExact{Kind: FrBalls, Expectation: []rune("B")},
+				parser.Exact{Kind: FrBalls, Expectation: []rune("8")},
+				parser.Exact{Kind: FrBalls, Expectation: []rune("B")},
 			},
 			ruleShaft,
-			parser.TermExact{Kind: FrHead, Expectation: []rune(">")},
+			parser.Exact{Kind: FrHead, Expectation: []rune(">")},
 		},
 		Action: mod.onDickDetected,
 	}
@@ -61,11 +84,11 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 		Designation: "dick(left)",
 		Kind:        FrDick,
 		Pattern: parser.Sequence{
-			parser.TermExact{Kind: FrHead, Expectation: []rune("<")},
+			parser.Exact{Kind: FrHead, Expectation: []rune("<")},
 			ruleShaft,
 			parser.Either{
-				parser.TermExact{Kind: FrBalls, Expectation: []rune("8")},
-				parser.TermExact{Kind: FrBalls, Expectation: []rune("3")},
+				parser.Exact{Kind: FrBalls, Expectation: []rune("8")},
+				parser.Exact{Kind: FrBalls, Expectation: []rune("3")},
 			},
 		},
 		Action: mod.onDickDetected,
@@ -74,14 +97,14 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 	ruleFile := &parser.Rule{
 		Designation: "file",
 		Pattern: parser.Sequence{
-			parser.Optional{Pattern: parser.Term(misc.FrSpace)},
+			parser.Optional{Pattern: termSpace},
 			parser.ZeroOrMore{
 				Pattern: parser.Sequence{
 					parser.Either{
 						ruleDickLeft,
 						ruleDickRight,
 					},
-					parser.Optional{Pattern: parser.Term(misc.FrSpace)},
+					parser.Optional{Pattern: termSpace},
 				},
 			},
 		},
@@ -89,13 +112,12 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 
 	// Initialize lexer and parser
 	par := parser.NewParser()
-	lex := misc.NewLexer(&parser.SourceFile{
-		Name: fileName,
-		Src:  source,
-	})
 
 	// Parse the source file
-	mainFrag, err := par.Parse(lex, ruleFile)
+	mainFrag, err := par.Parse(&parser.SourceFile{
+		Name: fileName,
+		Src:  source,
+	}, ruleFile)
 	if err != nil {
 		return nil, err
 	}

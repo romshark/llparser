@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -18,51 +17,22 @@ type Pattern interface {
 	Desig() string
 }
 
-// Term represents a concrete terminal token pattern
-type Term FragmentKind
-
-// Container implements the Pattern interface
-func (Term) Container() bool { return false }
-
-// TerminalPattern implements the Pattern interface
-func (Term) TerminalPattern() Pattern { return nil }
-
-// Desig implements the Pattern interface
-func (tm Term) Desig() string {
-	return fmt.Sprintf("terminal(%d)", tm)
-}
-
-// TermExact represents an exact terminal token pattern
-type TermExact struct {
+// Exact represents an exact terminal token pattern
+type Exact struct {
 	Kind        FragmentKind
 	Expectation []rune
 }
 
 // Container implements the Pattern interface
-func (TermExact) Container() bool { return false }
+func (Exact) Container() bool { return false }
 
 // TerminalPattern implements the Pattern interface
-func (TermExact) TerminalPattern() Pattern { return nil }
+func (Exact) TerminalPattern() Pattern { return nil }
 
 // Desig implements the Pattern interface
-func (tm TermExact) Desig() string {
+func (tm Exact) Desig() string {
 	return "'" + string(tm.Expectation) + "'"
 }
-
-// Checked represents an arbitrary terminal token pattern matched by a function
-type Checked struct {
-	Designation string
-	Fn          func([]rune) bool
-}
-
-// Container implements the Pattern interface
-func (Checked) Container() bool { return false }
-
-// TerminalPattern implements the Pattern interface
-func (Checked) TerminalPattern() Pattern { return nil }
-
-// Desig implements the Pattern interface
-func (ck Checked) Desig() string { return ck.Designation }
 
 // Lexed represents a lexed pattern
 type Lexed struct {
