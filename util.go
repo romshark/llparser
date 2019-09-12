@@ -1,4 +1,4 @@
-package misc
+package parser
 
 func isLineBreak(source []rune, index uint) int {
 	switch source[index] {

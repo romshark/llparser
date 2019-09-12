@@ -10,8 +10,8 @@ import (
 
 func TestPrintFragment(t *testing.T) {
 	pr := parser.NewParser()
-	lx := newLexer("abcdef")
-	mainFrag, err := pr.Parse(lx, &parser.Rule{
+	src := newSource("abcdef")
+	mainFrag, err := pr.Parse(src, &parser.Rule{
 		Kind: parser.FragmentKind(100),
 		Pattern: parser.Sequence{
 			parser.TermExact{

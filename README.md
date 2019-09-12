@@ -72,13 +72,6 @@ rule.Pattern = llparser.Sequence{
 
 ### Terminals
 
-#### Pattern: Term
-`Term` expects a particular fragment kind to be lexed:
-
-```go
-Pattern: llparser.Term(SomeKindConstant),
-```
-
 #### Pattern: TermExact
 `TermExact` expects a particular sequence of characters to be lexed:
 
@@ -86,16 +79,6 @@ Pattern: llparser.Term(SomeKindConstant),
 Pattern: llparser.TermExact{
 	Kind:        SomeKindConstant,
 	Expectation: []rune("some string"),
-},
-```
-
-#### Pattern: Checked
-`Checked` expects the lexed fragment to pass an arbitrary user-defined validation function:
-
-```go
-Pattern: llparser.Checked{
-	Designation: "some checked terminal",
-	Fn:          func(str []rune) bool { return len(str) > 5 },
 },
 ```
 
@@ -201,10 +184,6 @@ type Lexer interface {
 	Set(Cursor)
 }
 ```
-
-A [default lexer implementation](https://github.com/romshark/llparser/tree/master/misc) is available out-of-the-box but sometimes implementing your own parser makes more sense. Some examples for when a custom lexer might be useful:
-- Sometimes you don't care how many white-spaces, tabs and line-breaks there are between the patterns you care about and thus it doesn't make any sense to make each individual space character a terminal leaf-node, instead the lexer would read a sequence of whitespaces, tabs and line-breaks as a single typed terminal node (in fact, this is the behavior of the default lexer implementation linked aboved, it will treat these kinds of sequences as `misc.FrSpace`) reducing the complexity of the resulting parse-tree.
-- If you want to disallow certain kinds of runes in the source code you can make the custom lexer implementation return an `ErrUnexpectedToken` error when approaching one.
 
 ### The Parse-Tree
 
