@@ -153,37 +153,6 @@ Pattern: llparser.Either{
 	anotherPattern,
 },
 ```
-### Lexer
-
-The lexer is an abstract part of the parser which [tokenizes](https://en.wikipedia.org/wiki/Lexical_analysis#Tokenization) the input stream:
-
-```go
-// Lexer defines the interface of an abstract lexer implementation
-type Lexer interface {
-	Read() (*Token, error)
-
-	ReadExact(
-		expectation []rune,
-		kind FragmentKind,
-	) (
-		token *Token,
-		matched bool,
-		err error,
-	)
-
-	ReadUntil(
-		fn func(Cursor) uint,
-		kind FragmentKind,
-	) (
-		token *Token,
-		err error,
-	)
-
-	Position() Cursor
-
-	Set(Cursor)
-}
-```
 
 ### The Parse-Tree
 
