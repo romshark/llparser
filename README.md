@@ -35,7 +35,7 @@ mainRule := &llparser.Rule{
 		Kind:        101,
 		Expectation: []rune("string"),
 	},
-	Action: func(f llparser..Fragment) error {
+	Action: func(f llparser.Fragment) error {
 		log.Print("the rule was successfuly matched!")
 		return nil
 	},
