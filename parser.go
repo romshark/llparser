@@ -242,16 +242,50 @@ func (pr Parser) parseRule(
 	return composedFrag, nil
 }
 
+func (pr Parser) tryErrRule(
+	lex *lexer,
+	errRule *Rule,
+	previousUnexpErr error,
+) error {
+	if errRule != nil {
+		_, err := pr.parseRule(newScanner(lex), errRule)
+		if err == nil {
+			// Return the previous error when no error was returned
+			return previousUnexpErr
+		}
+		if err, ok := err.(*ErrUnexpectedToken); ok {
+			// Reset expected token for the error-rule
+			err.Expected = nil
+		}
+		return err
+	}
+	return nil
+}
+
 // Parse parses the given rule
-func (pr Parser) Parse(source *SourceFile, rule *Rule) (Fragment, error) {
+func (pr Parser) Parse(
+	source *SourceFile,
+	rule *Rule,
+	errRule *Rule,
+) (Fragment, error) {
 	if source == nil {
-		return nil, errors.New("missing source file while parsing")
+		return nil, errors.New("missing source file")
+	}
+	if rule == nil {
+		return nil, errors.New("missing main grammar rule")
 	}
 
 	lex := &lexer{cr: NewCursor(source)}
 
 	mainFrag, err := pr.parseRule(newScanner(lex), rule)
 	if err != nil {
+		if err, ok := err.(*ErrUnexpectedToken); ok {
+			// Reset the lexer to the start position of the error
+			lex.cr = err.At
+		}
+		if err := pr.tryErrRule(lex, errRule, err); err != nil {
+			return nil, err
+		}
 		return nil, err
 	}
 
@@ -264,10 +298,19 @@ func (pr Parser) Parse(source *SourceFile, rule *Rule) (Fragment, error) {
 		return nil, err
 	}
 	if last != nil {
-		return nil, &ErrUnexpectedToken{
-			At:       last.VBegin,
-			Expected: nil,
+		if errRule != nil {
+			// Try to match an error-pattern
+			lex.cr = last.VBegin
 		}
+
+		unexpErr := &ErrUnexpectedToken{At: last.VBegin}
+
+		if err := pr.tryErrRule(lex, errRule, unexpErr); err != nil {
+			return nil, err
+		}
+
+		// Fallback to default unexpected-token error
+		return nil, unexpErr
 	}
 
 	return mainFrag, nil

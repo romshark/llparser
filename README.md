@@ -157,3 +157,42 @@ Pattern: llparser.Either{
 ### The Parse-Tree
 
 A parse-tree defines the serialized representation of the parsed input stream and consists of `Fragment` interfaces represented by the main fragment returned by `llparser.Parse`. A fragment is a typed chunk of the source code pointing to a start and end position in the source file, defining the *kind* of the chunk and referring to its child-fragments.
+
+### Error-Handling
+
+Normally, when the parser fails to match the provided grammar it returns an
+`ErrUnexpectedToken` error which is rather generic and doesn't reflect the actual
+mistake with a comprehensive error message. To improve the quality of the returned
+error messages an error-rule can be provided which the parser tries to match at
+the position of an unexpected token. If the error-rule is matched successfully
+the error returned by the matched `Action` callback is returned. If the error-rule
+doesn't match then the default `ErrUnexpectedToken` error is returned as usual.
+
+```go
+grammar := &parser.Rule{
+	Pattern: parser.Sequence{
+		parser.Exact{Expectation: []rune("foo")},
+		parser.Exact{Expectation: []rune("...")},
+	},
+}
+
+errRule := &parser.Rule{
+	Pattern: parser.Either{
+		parser.OneOrMore{
+			Pattern: parser.Exact{Expectation: []rune(";")},
+		},
+		parser.OneOrMore{
+			Pattern: parser.Exact{Expectation: []rune(".")},
+		},
+	},
+	Action: func(fr parser.Fragment) error {
+		// Return a convenient error message instead of a generic one
+		return fmt.Errorf("expected 3 dots, got %d", len(fr.Src()))
+	},
+}
+
+mainFrag, err := pr.Parse(src, grammar, errRule)
+if err != nil {
+	log.Fatal("Parser error: ", err)
+}
+```

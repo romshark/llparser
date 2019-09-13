@@ -23,7 +23,7 @@ func TestPrintFragment(t *testing.T) {
 				Expectation: []rune("def"),
 			},
 		},
-	})
+	}, nil)
 	require.NoError(t, err)
 	require.NotNil(t, mainFrag)
 

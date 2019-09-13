@@ -7,7 +7,7 @@ import (
 )
 
 func TestParser(t *testing.T) {
-	var src = `
+	src := `
 	B===> 8==>  B::>
 		<====8 <::::::3
 			8xxxx> 8xxx=xxx>
@@ -26,4 +26,46 @@ func TestParser(t *testing.T) {
 	require.Equal(t, "8xxx=xxx>", string(mod.Dicks[6].Frag.Src()))
 	require.Equal(t, "B:x:=:x>", string(mod.Dicks[7].Frag.Src()))
 	require.Equal(t, "<:=3", string(mod.Dicks[8].Frag.Src()))
+}
+
+func TestParserErr(t *testing.T) {
+	checkErr := func(
+		t *testing.T,
+		src,
+		expectedErrMsg string,
+	) {
+		mod, err := Parse("sample.dicklang", []rune(src))
+		require.Error(t, err)
+		require.Equal(t, expectedErrMsg, err.Error())
+		require.Nil(t, mod)
+	}
+
+	t.Run("MissingHeadRight", func(t *testing.T) {
+		checkErr(
+			t,
+			`B===> B=== B===>`,
+			"that dick is missing a head at sample.dicklang:1:7",
+		)
+	})
+	t.Run("MissingHeadLeft", func(t *testing.T) {
+		checkErr(
+			t,
+			`<===3 ===3 <===3`,
+			"that dick is missing a head at sample.dicklang:1:7",
+		)
+	})
+	t.Run("MissingBallsRight", func(t *testing.T) {
+		checkErr(
+			t,
+			`B===> ===> B===>`,
+			"that dick is missing its balls at sample.dicklang:1:7",
+		)
+	})
+	t.Run("MissingBallsLeft", func(t *testing.T) {
+		checkErr(
+			t,
+			`<===3 <=== <===3`,
+			"that dick is missing its balls at sample.dicklang:1:7",
+		)
+	})
 }

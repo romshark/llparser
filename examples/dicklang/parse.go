@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+
 	parser "github.com/romshark/llparser"
 )
 
@@ -33,6 +35,12 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 	mod := &ModelDicks{}
 
 	// Define the grammar
+	termHeadLeft := parser.Exact{Kind: FrHead, Expectation: []rune("<")}
+	termHeadRight := parser.Exact{Kind: FrHead, Expectation: []rune(">")}
+	termBalls1 := parser.Exact{Kind: FrBalls, Expectation: []rune("8")}
+	termBallsRight1 := parser.Exact{Kind: FrBalls, Expectation: []rune("B")}
+	termBallsLeft1 := parser.Exact{Kind: FrBalls, Expectation: []rune("3")}
+
 	termSpace := parser.Lexed{
 		Fn: func(crs parser.Cursor) uint {
 			switch crs.File.Src[crs.Index] {
@@ -71,11 +79,11 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 		Kind:        FrDick,
 		Pattern: parser.Sequence{
 			parser.Either{
-				parser.Exact{Kind: FrBalls, Expectation: []rune("8")},
-				parser.Exact{Kind: FrBalls, Expectation: []rune("B")},
+				termBalls1,
+				termBallsRight1,
 			},
 			ruleShaft,
-			parser.Exact{Kind: FrHead, Expectation: []rune(">")},
+			termHeadRight,
 		},
 		Action: mod.onDickDetected,
 	}
@@ -84,11 +92,11 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 		Designation: "dick(left)",
 		Kind:        FrDick,
 		Pattern: parser.Sequence{
-			parser.Exact{Kind: FrHead, Expectation: []rune("<")},
+			termHeadLeft,
 			ruleShaft,
 			parser.Either{
-				parser.Exact{Kind: FrBalls, Expectation: []rune("8")},
-				parser.Exact{Kind: FrBalls, Expectation: []rune("3")},
+				termBalls1,
+				termBallsLeft1,
 			},
 		},
 		Action: mod.onDickDetected,
@@ -110,6 +118,58 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 		},
 	}
 
+	// Define error patterns
+	errRule := &parser.Rule{
+		Pattern: parser.Either{
+			// Dick (right) without a head
+			&parser.Rule{
+				Pattern: parser.Sequence{
+					parser.Either{
+						termBalls1,
+						termBallsRight1,
+					},
+					ruleShaft,
+				},
+				Action: func(parser.Fragment) error {
+					return errors.New("that dick is missing a head")
+				},
+			},
+			// Dick (left) without a head
+			&parser.Rule{
+				Pattern: parser.Sequence{
+					ruleShaft,
+					parser.Either{
+						termBalls1,
+						termBallsLeft1,
+					},
+				},
+				Action: func(parser.Fragment) error {
+					return errors.New("that dick is missing a head")
+				},
+			},
+			// Dick (right) without balls
+			&parser.Rule{
+				Pattern: parser.Sequence{
+					ruleShaft,
+					termHeadRight,
+				},
+				Action: func(parser.Fragment) error {
+					return errors.New("that dick is missing its balls")
+				},
+			},
+			// Dick (left) without balls
+			&parser.Rule{
+				Pattern: parser.Sequence{
+					termHeadLeft,
+					ruleShaft,
+				},
+				Action: func(parser.Fragment) error {
+					return errors.New("that dick is missing its balls")
+				},
+			},
+		},
+	}
+
 	// Initialize lexer and parser
 	par := parser.NewParser()
 
@@ -117,7 +177,7 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 	mainFrag, err := par.Parse(&parser.SourceFile{
 		Name: fileName,
 		Src:  source,
-	}, ruleFile)
+	}, ruleFile, errRule)
 	if err != nil {
 		return nil, err
 	}

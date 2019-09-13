@@ -2,6 +2,7 @@ package parser_test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	parser "github.com/romshark/llparser"
@@ -128,7 +129,7 @@ func TestParserSequence(t *testing.T) {
 				termLatinWord,
 			},
 			Kind: expectedKind,
-		})
+		}, nil)
 
 		require.NoError(t, err)
 		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 10}, 3)
@@ -153,7 +154,7 @@ func TestParserSequence(t *testing.T) {
 				testR_bar,
 			},
 			Kind: expectedKind,
-		})
+		}, nil)
 		require.NoError(t, err)
 		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 10}, 3)
 
@@ -182,7 +183,7 @@ func TestParserSequenceErr(t *testing.T) {
 				testR_foo,
 			},
 			Kind: expectedKind,
-		})
+		}, nil)
 
 		require.Error(t, err)
 		require.Equal(
@@ -212,7 +213,7 @@ func TestParserSequenceErr(t *testing.T) {
 				},
 			},
 			Kind: expectedKind,
-		})
+		}, nil)
 
 		require.Error(t, err)
 		require.Equal(
@@ -239,7 +240,7 @@ func TestParserOptionalInSequence(t *testing.T) {
 				testR_bar,
 			},
 			Kind: expectedKind,
-		})
+		}, nil)
 
 		require.NoError(t, err)
 		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 4}, 1)
@@ -264,7 +265,7 @@ func TestParserOptionalInSequence(t *testing.T) {
 				testR_bar,
 			},
 			Kind: expectedKind,
-		})
+		}, nil)
 		require.NoError(t, err)
 		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 8}, 3)
 
@@ -298,7 +299,7 @@ func TestParserZeroOrMore(t *testing.T) {
 				}},
 			},
 			Kind: expectedKind,
-		})
+		}, nil)
 
 		require.NoError(t, err)
 		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 4}, 1)
@@ -322,7 +323,7 @@ func TestParserZeroOrMore(t *testing.T) {
 				},
 			},
 			Kind: expectedKind,
-		})
+		}, nil)
 		require.NoError(t, err)
 		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 5}, 2)
 
@@ -346,7 +347,7 @@ func TestParserZeroOrMore(t *testing.T) {
 				},
 			},
 			Kind: expectedKind,
-		})
+		}, nil)
 		require.NoError(t, err)
 		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 13}, 6)
 
@@ -376,7 +377,7 @@ func TestParserOneOrMore(t *testing.T) {
 				},
 			},
 			Kind: expectedKind,
-		})
+		}, nil)
 
 		require.Error(t, err)
 
@@ -401,7 +402,7 @@ func TestParserOneOrMore(t *testing.T) {
 				},
 			},
 			Kind: expectedKind,
-		})
+		}, nil)
 		require.NoError(t, err)
 		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 5}, 2)
 
@@ -425,7 +426,7 @@ func TestParserOneOrMore(t *testing.T) {
 				},
 			},
 			Kind: expectedKind,
-		})
+		}, nil)
 		require.NoError(t, err)
 		require.NotNil(t, mainFrag)
 		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 13}, 6)
@@ -449,7 +450,7 @@ func TestParserSuperfluousInput(t *testing.T) {
 		Designation: "single foo",
 		Pattern:     testR_foo,
 		Kind:        expectedKind,
-	})
+	}, nil)
 
 	require.Error(t, err)
 	require.Equal(t, "unexpected token at test.txt:1:4", err.Error())
@@ -468,7 +469,7 @@ func TestParserEither(t *testing.T) {
 				testR_bar,
 			},
 			Kind: expectedKind,
-		})
+		}, nil)
 
 		require.Error(t, err)
 		require.Equal(
@@ -491,7 +492,7 @@ func TestParserEither(t *testing.T) {
 				testR_bar,
 			},
 			Kind: expectedKind,
-		})
+		}, nil)
 		require.NoError(t, err)
 		require.NotNil(t, mainFrag)
 		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 4}, 1)
@@ -514,7 +515,7 @@ func TestParserEither(t *testing.T) {
 				testR_bar,
 			},
 			Kind: expectedKind,
-		})
+		}, nil)
 		require.NoError(t, err)
 		require.NotNil(t, mainFrag)
 		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 4}, 1)
@@ -540,7 +541,7 @@ func TestParserRecursiveRule(t *testing.T) {
 		termSeparator,
 		parser.Optional{recursiveRule},
 	}
-	mainFrag, err := pr.Parse(src, recursiveRule)
+	mainFrag, err := pr.Parse(src, recursiveRule, nil)
 
 	require.NoError(t, err)
 	checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 13}, 3)
@@ -600,7 +601,7 @@ func TestParserAction(t *testing.T) {
 				termSeparator,
 			},
 		}},
-	})
+	}, nil)
 
 	require.NoError(t, err)
 	require.NotNil(t, mainFrag)
@@ -626,7 +627,7 @@ func TestParserActionErr(t *testing.T) {
 		Action: func(f parser.Fragment) error {
 			return expectedErr
 		},
-	})
+	}, nil)
 
 	require.Error(t, err)
 	require.IsType(t, &parser.Err{}, err)
@@ -657,7 +658,7 @@ func TestParserLexed(t *testing.T) {
 			Fn:          fn,
 		},
 		Kind: expectedKind,
-	})
+	}, nil)
 
 	require.NoError(t, err)
 	checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{2, 4}, 1)
@@ -687,8 +688,78 @@ func TestParserLexedErr(t *testing.T) {
 			Fn:          fn,
 		},
 		Kind: expectedKind,
-	})
+	}, nil)
 
 	require.Error(t, err)
 	require.Nil(t, mainFrag)
+}
+
+func TestParserErrRule(t *testing.T) {
+	t.Run("MatchErr", func(t *testing.T) {
+		pr := parser.NewParser()
+		src := newSource("foo..")
+		expectedKind := parser.FragmentKind(100)
+
+		grammar := &parser.Rule{
+			Designation: "foo list",
+			Pattern: parser.Sequence{
+				testR_foo,
+				parser.Exact{Expectation: []rune("...")},
+			},
+			Kind: expectedKind,
+		}
+
+		errRule := &parser.Rule{
+			Pattern: parser.Either{
+				parser.OneOrMore{
+					Pattern: parser.Exact{Expectation: []rune(";")},
+				},
+				parser.OneOrMore{
+					Pattern: parser.Exact{Expectation: []rune(".")},
+				},
+			},
+			Action: func(fr parser.Fragment) error {
+				return fmt.Errorf("expected 3 dots, got %d", len(fr.Src()))
+			},
+		}
+
+		mainFrag, err := pr.Parse(src, grammar, errRule)
+
+		require.Error(t, err)
+		require.Equal(t, "expected 3 dots, got 2 at test.txt:1:4", err.Error())
+		require.Nil(t, mainFrag)
+	})
+
+	t.Run("NoMatch", func(t *testing.T) {
+		pr := parser.NewParser()
+		src := newSource("foo..")
+		expectedKind := parser.FragmentKind(100)
+
+		grammar := &parser.Rule{
+			Designation: "foo list",
+			Pattern: parser.Sequence{
+				testR_foo,
+				parser.Exact{Expectation: []rune("...")},
+			},
+			Kind: expectedKind,
+		}
+
+		errRule := &parser.Rule{
+			Pattern: parser.OneOrMore{
+				Pattern: parser.Exact{Expectation: []rune(";")},
+			},
+			Action: func(fr parser.Fragment) error {
+				return fmt.Errorf(
+					"expected 3 semicolons, got %d",
+					len(fr.Src()),
+				)
+			},
+		}
+
+		mainFrag, err := pr.Parse(src, grammar, errRule)
+
+		require.Error(t, err)
+		require.Equal(t, "unexpected token at test.txt:1:4", err.Error())
+		require.Nil(t, mainFrag)
+	})
 }
