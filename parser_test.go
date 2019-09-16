@@ -278,7 +278,7 @@ func TestParserOptionalInSequence(t *testing.T) {
 	})
 }
 
-func TestParserZeroOrMore(t *testing.T) {
+func TestParserRepeatedZeroOrMany(t *testing.T) {
 	t.Run("None", func(t *testing.T) {
 		pr := parser.NewParser()
 		src := newSource("foo")
@@ -286,8 +286,8 @@ func TestParserZeroOrMore(t *testing.T) {
 		mainFrag, err := pr.Parse(src, &parser.Rule{
 			Designation: "(space foo)*",
 			Pattern: parser.Sequence{
-				parser.ZeroOrMore{
-					parser.Sequence{
+				parser.Repeated{
+					Pattern: parser.Sequence{
 						termSpace,
 						testR_foo,
 					},
@@ -316,8 +316,8 @@ func TestParserZeroOrMore(t *testing.T) {
 		expectedKind := parser.FragmentKind(100)
 		mainFrag, err := pr.Parse(src, &parser.Rule{
 			Designation: "(space foo)*",
-			Pattern: parser.ZeroOrMore{
-				parser.Sequence{
+			Pattern: parser.Repeated{
+				Pattern: parser.Sequence{
 					termSpace,
 					testR_foo,
 				},
@@ -340,8 +340,8 @@ func TestParserZeroOrMore(t *testing.T) {
 		expectedKind := parser.FragmentKind(100)
 		mainFrag, err := pr.Parse(src, &parser.Rule{
 			Designation: "(space foo)*",
-			Pattern: parser.ZeroOrMore{
-				parser.Sequence{
+			Pattern: parser.Repeated{
+				Pattern: parser.Sequence{
 					termSpace,
 					testR_foo,
 				},
@@ -363,27 +363,26 @@ func TestParserZeroOrMore(t *testing.T) {
 	})
 }
 
-func TestParserOneOrMore(t *testing.T) {
+func TestParserRepeatedMin1(t *testing.T) {
+	expectedKind := parser.FragmentKind(100)
+	grammar := &parser.Rule{
+		Designation: "foo{1,}",
+		Pattern: parser.Repeated{
+			Min:     1,
+			Pattern: testR_foo,
+		},
+		Kind: expectedKind,
+	}
+
 	t.Run("None", func(t *testing.T) {
 		pr := parser.NewParser()
-		src := newSource("foo")
-		expectedKind := parser.FragmentKind(100)
-		mainFrag, err := pr.Parse(src, &parser.Rule{
-			Designation: "(space foo)*",
-			Pattern: parser.OneOrMore{
-				parser.Sequence{
-					termSpace,
-					testR_foo,
-				},
-			},
-			Kind: expectedKind,
-		}, nil)
+		src := newSource("bar")
+		mainFrag, err := pr.Parse(src, grammar, nil)
 
 		require.Error(t, err)
-
 		require.Equal(
 			t,
-			"unexpected token, expected {space} at test.txt:1:1",
+			"unexpected token, expected {keyword foo} at test.txt:1:1",
 			err.Error(),
 		)
 		require.Nil(t, mainFrag)
@@ -391,55 +390,180 @@ func TestParserOneOrMore(t *testing.T) {
 
 	t.Run("One", func(t *testing.T) {
 		pr := parser.NewParser()
-		src := newSource(" foo")
-		expectedKind := parser.FragmentKind(100)
-		mainFrag, err := pr.Parse(src, &parser.Rule{
-			Designation: "(space foo)*",
-			Pattern: parser.ZeroOrMore{
-				parser.Sequence{
-					termSpace,
-					testR_foo,
-				},
-			},
-			Kind: expectedKind,
-		}, nil)
+		src := newSource("foo")
+		mainFrag, err := pr.Parse(src, grammar, nil)
 		require.NoError(t, err)
-		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 5}, 2)
-
-		// Check elements
-		elems := mainFrag.Elements()
-
-		checkFrag(t, src, elems[0], FrSpace, C{1, 1}, C{1, 2}, 0)
-		checkFrag(t, src, elems[1], FrFoo, C{1, 2}, C{1, 5}, 1)
-	})
-
-	t.Run("Multiple", func(t *testing.T) {
-		pr := parser.NewParser()
-		src := newSource(" foo foo foo")
-		expectedKind := parser.FragmentKind(100)
-		mainFrag, err := pr.Parse(src, &parser.Rule{
-			Designation: "(space foo)*",
-			Pattern: parser.OneOrMore{
-				parser.Sequence{
-					termSpace,
-					testR_foo,
-				},
-			},
-			Kind: expectedKind,
-		}, nil)
-		require.NoError(t, err)
-		require.NotNil(t, mainFrag)
-		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 13}, 6)
+		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 4}, 1)
 
 		// Check elements
 		elements := mainFrag.Elements()
-		checkFrag(t, src, elements[0], FrSpace, C{1, 1}, C{1, 2}, 0)
-		checkFrag(t, src, elements[1], FrFoo, C{1, 2}, C{1, 5}, 1)
-		checkFrag(t, src, elements[2], FrSpace, C{1, 5}, C{1, 6}, 0)
-		checkFrag(t, src, elements[3], FrFoo, C{1, 6}, C{1, 9}, 1)
-		checkFrag(t, src, elements[4], FrSpace, C{1, 9}, C{1, 10}, 0)
-		checkFrag(t, src, elements[5], FrFoo, C{1, 10}, C{1, 13}, 1)
+		checkFrag(t, src, elements[0], FrFoo, C{1, 1}, C{1, 4}, 1)
 	})
+
+	t.Run("Multiple(3)", func(t *testing.T) {
+		pr := parser.NewParser()
+		src := newSource("foofoofoo")
+		mainFrag, err := pr.Parse(src, grammar, nil)
+		require.NoError(t, err)
+		require.NotNil(t, mainFrag)
+		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 10}, 3)
+
+		// Check elements
+		elements := mainFrag.Elements()
+		checkFrag(t, src, elements[0], FrFoo, C{1, 1}, C{1, 4}, 1)
+		checkFrag(t, src, elements[1], FrFoo, C{1, 4}, C{1, 7}, 1)
+		checkFrag(t, src, elements[2], FrFoo, C{1, 7}, C{1, 10}, 1)
+	})
+}
+
+func TestParserRepeatedMin2(t *testing.T) {
+	expectedKind := parser.FragmentKind(100)
+	grammar := &parser.Rule{
+		Designation: "foo{2,}",
+		Pattern: parser.Repeated{
+			Min:     2,
+			Pattern: testR_foo,
+		},
+		Kind: expectedKind,
+	}
+
+	t.Run("None", func(t *testing.T) {
+		pr := parser.NewParser()
+		src := newSource("bar")
+		mainFrag, err := pr.Parse(src, grammar, nil)
+
+		require.Error(t, err)
+		require.Equal(
+			t,
+			"unexpected token, expected {keyword foo} at test.txt:1:1",
+			err.Error(),
+		)
+		require.Nil(t, mainFrag)
+	})
+
+	t.Run("One", func(t *testing.T) {
+		pr := parser.NewParser()
+		src := newSource("foo")
+		mainFrag, err := pr.Parse(src, grammar, nil)
+
+		require.Error(t, err)
+		require.Equal(
+			t,
+			"unexpected token, expected {keyword foo} at test.txt:1:4",
+			err.Error(),
+		)
+		require.Nil(t, mainFrag)
+	})
+
+	t.Run("Multiple(min)", func(t *testing.T) {
+		pr := parser.NewParser()
+		src := newSource("foofoo")
+		mainFrag, err := pr.Parse(src, grammar, nil)
+		require.NoError(t, err)
+		require.NotNil(t, mainFrag)
+		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 7}, 2)
+
+		// Check elements
+		elements := mainFrag.Elements()
+		checkFrag(t, src, elements[0], FrFoo, C{1, 1}, C{1, 4}, 1)
+		checkFrag(t, src, elements[1], FrFoo, C{1, 4}, C{1, 7}, 1)
+	})
+
+	t.Run("Multiple(3)", func(t *testing.T) {
+		pr := parser.NewParser()
+		src := newSource("foofoofoo")
+		mainFrag, err := pr.Parse(src, grammar, nil)
+		require.NoError(t, err)
+		require.NotNil(t, mainFrag)
+		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 10}, 3)
+
+		// Check elements
+		elements := mainFrag.Elements()
+		checkFrag(t, src, elements[0], FrFoo, C{1, 1}, C{1, 4}, 1)
+		checkFrag(t, src, elements[1], FrFoo, C{1, 4}, C{1, 7}, 1)
+		checkFrag(t, src, elements[2], FrFoo, C{1, 7}, C{1, 10}, 1)
+	})
+}
+
+func TestParserRepeatedMin1Max2(t *testing.T) {
+	expectedKind := parser.FragmentKind(100)
+	grammar := &parser.Rule{
+		Designation: "foo{1,2}",
+		Pattern: parser.Repeated{
+			Min:     1,
+			Max:     2,
+			Pattern: testR_foo,
+		},
+		Kind: expectedKind,
+	}
+
+	t.Run("None", func(t *testing.T) {
+		pr := parser.NewParser()
+		src := newSource("bar")
+		mainFrag, err := pr.Parse(src, grammar, nil)
+
+		require.Error(t, err)
+		require.Equal(
+			t,
+			"unexpected token, expected {keyword foo} at test.txt:1:1",
+			err.Error(),
+		)
+		require.Nil(t, mainFrag)
+	})
+
+	t.Run("One", func(t *testing.T) {
+		pr := parser.NewParser()
+		src := newSource("foo")
+		mainFrag, err := pr.Parse(src, grammar, nil)
+		require.NoError(t, err)
+		require.NotNil(t, mainFrag)
+		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 4}, 1)
+
+		// Check elements
+		elements := mainFrag.Elements()
+		checkFrag(t, src, elements[0], FrFoo, C{1, 1}, C{1, 4}, 1)
+	})
+
+	t.Run("Multiple(max)", func(t *testing.T) {
+		pr := parser.NewParser()
+		src := newSource("foofoo")
+		mainFrag, err := pr.Parse(src, grammar, nil)
+		require.NoError(t, err)
+		require.NotNil(t, mainFrag)
+		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 7}, 2)
+
+		// Check elements
+		elements := mainFrag.Elements()
+		checkFrag(t, src, elements[0], FrFoo, C{1, 1}, C{1, 4}, 1)
+		checkFrag(t, src, elements[1], FrFoo, C{1, 4}, C{1, 7}, 1)
+	})
+
+	t.Run("Multiple(max+1)", func(t *testing.T) {
+		pr := parser.NewParser()
+		src := newSource("foofoofoo")
+		mainFrag, err := pr.Parse(src, grammar, nil)
+
+		require.Error(t, err)
+		require.Equal(t, "unexpected token at test.txt:1:7", err.Error())
+		require.Nil(t, mainFrag)
+	})
+}
+
+func TestParserRepeatedMinGreaterMax(t *testing.T) {
+	expectedKind := parser.FragmentKind(100)
+	grammar := &parser.Rule{
+		Designation: "foo{2,1}",
+		Pattern: parser.Repeated{
+			Min:     2,
+			Max:     1,
+			Pattern: testR_foo,
+		},
+		Kind: expectedKind,
+	}
+	pr := parser.NewParser()
+	src := newSource("foofoo")
+
+	require.Panics(t, func() { _, _ = pr.Parse(src, grammar, nil) })
 }
 
 func TestParserSuperfluousInput(t *testing.T) {
@@ -499,8 +623,6 @@ func TestParserEither(t *testing.T) {
 
 		// Check elements
 		elements := mainFrag.Elements()
-		require.Len(t, elements, 1)
-
 		checkFrag(t, src, elements[0], FrFoo, C{1, 1}, C{1, 4}, 1)
 	})
 
@@ -522,8 +644,6 @@ func TestParserEither(t *testing.T) {
 
 		// Check elements
 		elements := mainFrag.Elements()
-		require.Len(t, elements, 1)
-
 		checkFrag(t, src, elements[0], FrBar, C{1, 1}, C{1, 4}, 1)
 	})
 }
@@ -594,13 +714,16 @@ func TestParserAction(t *testing.T) {
 	}
 	mainFrag, err := pr.Parse(src, &parser.Rule{
 		Designation: "list",
-		Pattern: parser.OneOrMore{&parser.Rule{
-			Designation: "list item",
-			Pattern: parser.Sequence{
-				parser.Either{ruleA, ruleB},
-				termSeparator,
+		Pattern: parser.Repeated{
+			Min: 1,
+			Pattern: &parser.Rule{
+				Designation: "list item",
+				Pattern: parser.Sequence{
+					parser.Either{ruleA, ruleB},
+					termSeparator,
+				},
 			},
-		}},
+		},
 	}, nil)
 
 	require.NoError(t, err)
@@ -711,10 +834,12 @@ func TestParserErrRule(t *testing.T) {
 
 		errRule := &parser.Rule{
 			Pattern: parser.Either{
-				parser.OneOrMore{
+				parser.Repeated{
+					Min:     1,
 					Pattern: parser.Exact{Expectation: []rune(";")},
 				},
-				parser.OneOrMore{
+				parser.Repeated{
+					Min:     1,
 					Pattern: parser.Exact{Expectation: []rune(".")},
 				},
 			},
@@ -745,7 +870,8 @@ func TestParserErrRule(t *testing.T) {
 		}
 
 		errRule := &parser.Rule{
-			Pattern: parser.OneOrMore{
+			Pattern: parser.Repeated{
+				Min:     1,
 				Pattern: parser.Exact{Expectation: []rune(";")},
 			},
 			Action: func(fr parser.Fragment) error {

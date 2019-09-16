@@ -68,4 +68,18 @@ func TestParserErr(t *testing.T) {
 			"that dick is missing its balls at sample.dicklang:1:7",
 		)
 	})
+	t.Run("TooSmallLeft", func(t *testing.T) {
+		checkErr(
+			t,
+			`<===3 <=3 <===3`,
+			"that dick is too small at sample.dicklang:1:7",
+		)
+	})
+	t.Run("TooSmallRight", func(t *testing.T) {
+		checkErr(
+			t,
+			`B===> B=> B===>`,
+			"that dick is too small at sample.dicklang:1:7",
+		)
+	})
 }
