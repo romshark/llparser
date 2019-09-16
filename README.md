@@ -132,7 +132,7 @@ Pattern: llparser.Sequence{
 
 #### Pattern: Repeated
 
-`Repeated` tries to match a number repititions of a single pattern:
+`Repeated` tries to match a number of repetitions of a single pattern:
 
 ```go
 Pattern: llparser.Repeated{
