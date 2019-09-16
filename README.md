@@ -133,12 +133,12 @@ Pattern: llparser.Repeated{
 },
 ```
 
-By default, `Min` and `Max` are `0` which is equivalent to "unlimited".
-
 - Setting `Min` to a greater number than `Max` when `Max` is greater `0` is illegal and will cause a panic.
 - Setting `Min` to `0` and `Max` to `1` is equivalent to declaring an optional.
 - Setting both `Min` and `Max` to `0` is equivalent to declaring an unlimited number of repetitions.
 - Setting `Min` to a positive number will require at least `Min` number of repetitions.
+- Setting `Max` to a positive number will match `Max` number of occurrences and stop matching the pattern.
+- `Min` and `Max` are `0` by default.
 
 #### Pattern: Either
 `Either` expects either of the given patterns selecting the first match:
