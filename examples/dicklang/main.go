@@ -7,7 +7,8 @@ import (
 	"log"
 	"os"
 
-	parser "github.com/romshark/llparser"
+	llparser "github.com/romshark/llparser"
+	"github.com/romshark/llparser/examples/dicklang/parser"
 )
 
 var flagFilePath = flag.String(
@@ -28,13 +29,13 @@ func main() {
 	if err != nil {
 		log.Fatal("ERR: ", err)
 	}
-	mod, err := Parse(*flagFilePath, []rune(string(bt)))
+	mod, err := parser.Parse(*flagFilePath, []rune(string(bt)))
 	if err != nil {
 		log.Fatal("ERR: ", err)
 	}
 	if *flagPrintParseTree {
 		// Print the parse-tree only
-		_, err := parser.PrintFragment(mod.Frag, os.Stdout, "  ")
+		_, err := llparser.PrintFragment(mod.Frag, os.Stdout, "  ")
 		if err != nil {
 			log.Fatal(err)
 		}

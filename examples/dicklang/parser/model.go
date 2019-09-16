@@ -1,4 +1,4 @@
-package main
+package parser
 
 import (
 	parser "github.com/romshark/llparser"

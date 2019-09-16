@@ -1,8 +1,9 @@
-package main
+package parser_test
 
 import (
 	"testing"
 
+	"github.com/romshark/llparser/examples/dicklang/parser"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,7 +15,7 @@ func TestParser(t *testing.T) {
 		B:x:=:x>
 	 <:=3
 	`
-	mod, err := Parse("sample.dicklang", []rune(src))
+	mod, err := parser.Parse("sample.dicklang", []rune(src))
 	require.NoError(t, err)
 	require.Len(t, mod.Dicks, 9)
 	require.Equal(t, "B===>", string(mod.Dicks[0].Frag.Src()))
@@ -34,7 +35,7 @@ func TestParserErr(t *testing.T) {
 		src,
 		expectedErrMsg string,
 	) {
-		mod, err := Parse("sample.dicklang", []rune(src))
+		mod, err := parser.Parse("sample.dicklang", []rune(src))
 		require.Error(t, err)
 		require.Equal(t, expectedErrMsg, err.Error())
 		require.Nil(t, mod)
