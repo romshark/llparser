@@ -38,9 +38,6 @@ func (pr Parser) handlePattern(
 	case Repeated:
 		err := pr.parseRepeated(scan, pt.Min, pt.Max, pt.Pattern)
 		return nil, err
-	case Optional:
-		// Optional
-		return pr.parseOptional(scan, pt.Pattern)
 	case Sequence:
 		// Sequence
 		return pr.parseSequence(scan, pt)
@@ -71,27 +68,6 @@ func (pr Parser) parseLexed(
 		}
 	}
 	return tk, nil
-}
-
-func (pr Parser) parseOptional(
-	scanner *scanner,
-	pattern Pattern,
-) (Fragment, error) {
-	beforeCr := scanner.Lexer.cr
-	frag, err := pr.handlePattern(scanner, pattern)
-	if err != nil {
-		if _, ok := err.(*ErrUnexpectedToken); ok {
-			// Reset scanner to the initial position
-			scanner.Set(beforeCr)
-			return nil, nil
-		}
-		return nil, err
-	}
-	// Append rule patterns, other patterns are appended automatically
-	if !pattern.Container() {
-		scanner.Append(pattern, frag)
-	}
-	return frag, nil
 }
 
 func (pr Parser) parseRepeated(

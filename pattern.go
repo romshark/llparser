@@ -51,18 +51,6 @@ func (Lexed) TerminalPattern() Pattern { return nil }
 // Desig implements the Pattern interface
 func (ck Lexed) Desig() string { return ck.Designation }
 
-// Optional represents an arbitrary optional pattern
-type Optional struct{ Pattern }
-
-// Container implements the Pattern interface
-func (Optional) Container() bool { return true }
-
-// TerminalPattern implements the Pattern interface
-func (opt Optional) TerminalPattern() Pattern { return opt.Pattern }
-
-// Desig implements the Pattern interface
-func (opt Optional) Desig() string { return opt.Pattern.Desig() }
-
 // Sequence represents an exact sequence of arbitrary patterns
 type Sequence []Pattern
 

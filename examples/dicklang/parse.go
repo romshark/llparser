@@ -105,14 +105,22 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 	ruleFile := &parser.Rule{
 		Designation: "file",
 		Pattern: parser.Sequence{
-			parser.Optional{Pattern: termSpace},
+			parser.Repeated{
+				Min:     0,
+				Max:     1,
+				Pattern: termSpace,
+			},
 			parser.Repeated{
 				Pattern: parser.Sequence{
 					parser.Either{
 						ruleDickLeft,
 						ruleDickRight,
 					},
-					parser.Optional{Pattern: termSpace},
+					parser.Repeated{
+						Min:     0,
+						Max:     1,
+						Pattern: termSpace,
+					},
 				},
 			},
 		},

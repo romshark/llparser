@@ -66,7 +66,11 @@ Rules can also recurse:
 rule := &llparser.Rule{Kind: 1}
 rule.Pattern = llparser.Sequence{
 	llparser.Exact{Expectation: "="},
-	llparser.Optional{Pattern: rule}, // potential recursion
+	llparser.Repeated{
+		Min:     0,
+		Max:     1,
+		Pattern: rule,
+	}, // potential recursion
 }
 ```
 
@@ -101,15 +105,6 @@ Pattern: llparser.Lexed{
 
 ### Combinators
 
-#### Pattern: Optional
-`Optional` tries to match a specific pattern but doesn't expect it to be matched:
-
-```go
-Pattern: llparser.Optional{
-	Pattern: somePattern,
-},
-```
-
 #### Pattern: Sequence
 `Sequence` expects a specific sequence of patterns:
 
@@ -117,7 +112,9 @@ Pattern: llparser.Optional{
 Pattern: llparser.Sequence{
 	somePattern,
 	llparser.Term(SomeKindConstant),
-	llparser.Optional{
+	llparser.Repeated{
+		Min: 0,
+		Max: 1,
 		Pattern: llparser.Exact{
 			Kind:        SomeKindConstant,
 			Expectation: "foo",
