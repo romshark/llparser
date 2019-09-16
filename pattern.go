@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -80,32 +81,51 @@ func (seq Sequence) Desig() string {
 	return "{" + strings.Join(str, ", ") + "}"
 }
 
-// ZeroOrMore represents zero or more arbitrary patterns
-type ZeroOrMore struct{ Pattern }
-
-// Container implements the Pattern interface
-func (ZeroOrMore) Container() bool { return true }
-
-// TerminalPattern implements the Pattern interface
-func (zom ZeroOrMore) TerminalPattern() Pattern { return zom.Pattern }
-
-// Desig implements the Pattern interface
-func (zom ZeroOrMore) Desig() string {
-	return "zero or more " + zom.Pattern.Desig()
+// Repeated represents at least one arbitrary patterns
+type Repeated struct {
+	Pattern Pattern
+	Min     uint
+	Max     uint
 }
 
-// OneOrMore represents at least one arbitrary patterns
-type OneOrMore struct{ Pattern }
-
 // Container implements the Pattern interface
-func (OneOrMore) Container() bool { return true }
+func (Repeated) Container() bool { return true }
 
 // TerminalPattern implements the Pattern interface
-func (oom OneOrMore) TerminalPattern() Pattern { return oom.Pattern }
+func (oom Repeated) TerminalPattern() Pattern { return oom.Pattern }
 
 // Desig implements the Pattern interface
-func (oom OneOrMore) Desig() string {
-	return "zero or more " + oom.Pattern.Desig()
+func (oom Repeated) Desig() string {
+	switch {
+	case oom.Max < 1:
+		return fmt.Sprintf(
+			"%d+ repetitions of %s",
+			oom.Min,
+			oom.Pattern.Desig(),
+		)
+	case oom.Max == 0 && oom.Min == 0:
+		return fmt.Sprintf(
+			"0+ repetitions of %s",
+			oom.Pattern.Desig(),
+		)
+	case oom.Max == 0 && oom.Min == 1:
+		return fmt.Sprintf(
+			"optional %s",
+			oom.Pattern.Desig(),
+		)
+	case oom.Max == oom.Min:
+		return fmt.Sprintf(
+			"exactly %d repetitions of %s",
+			oom.Min,
+			oom.Pattern.Desig(),
+		)
+	}
+	return fmt.Sprintf(
+		"%d-%d repetitions of %s",
+		oom.Min,
+		oom.Max,
+		oom.Pattern.Desig(),
+	)
 }
 
 // Either represents either of the arbitrary patterns

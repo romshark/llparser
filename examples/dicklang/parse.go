@@ -62,16 +62,16 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 		Kind: FrSpace,
 	}
 
+	shaftElement := parser.Either{
+		parser.Exact{Expectation: []rune("=")},
+		parser.Exact{Expectation: []rune(":")},
+		parser.Exact{Expectation: []rune("x")},
+	}
+
 	ruleShaft := &parser.Rule{
 		Designation: "shaft",
 		Kind:        FrShaft,
-		Pattern: parser.OneOrMore{
-			Pattern: parser.Either{
-				parser.Exact{Expectation: []rune("=")},
-				parser.Exact{Expectation: []rune(":")},
-				parser.Exact{Expectation: []rune("x")},
-			},
-		},
+		Pattern:     parser.Repeated{Pattern: shaftElement, Min: 2},
 	}
 
 	ruleDickRight := &parser.Rule{
@@ -106,7 +106,7 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 		Designation: "file",
 		Pattern: parser.Sequence{
 			parser.Optional{Pattern: termSpace},
-			parser.ZeroOrMore{
+			parser.Repeated{
 				Pattern: parser.Sequence{
 					parser.Either{
 						ruleDickLeft,
@@ -165,6 +165,34 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 				},
 				Action: func(parser.Fragment) error {
 					return errors.New("that dick is missing its balls")
+				},
+			},
+			// Dick (right) too small
+			&parser.Rule{
+				Pattern: parser.Sequence{
+					parser.Either{
+						termBalls1,
+						termBallsRight1,
+					},
+					shaftElement,
+					termHeadRight,
+				},
+				Action: func(parser.Fragment) error {
+					return errors.New("that dick is too small")
+				},
+			},
+			// Dick (left) too small
+			&parser.Rule{
+				Pattern: parser.Sequence{
+					termHeadLeft,
+					shaftElement,
+					parser.Either{
+						termBalls1,
+						termBallsLeft1,
+					},
+				},
+				Action: func(parser.Fragment) error {
+					return errors.New("that dick is too small")
 				},
 			},
 		},

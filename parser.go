@@ -35,12 +35,9 @@ func (pr Parser) handlePattern(
 		return pr.parseTermExact(scan, pt)
 	case Lexed:
 		return pr.parseLexed(scan, pt)
-	case ZeroOrMore:
-		// ZeroOrMore
-		return pr.parseZeroOrMore(scan, pt.Pattern)
-	case OneOrMore:
-		// OneOrMore
-		return pr.parseOneOrMore(scan, pt.Pattern)
+	case Repeated:
+		err := pr.parseRepeated(scan, pt.Min, pt.Max, pt.Pattern)
+		return nil, err
 	case Optional:
 		// Optional
 		return pr.parseOptional(scan, pt.Pattern)
@@ -97,48 +94,40 @@ func (pr Parser) parseOptional(
 	return frag, nil
 }
 
-func (pr Parser) parseZeroOrMore(
+func (pr Parser) parseRepeated(
 	scanner *scanner,
+	min uint,
+	max uint,
 	pattern Pattern,
-) (Fragment, error) {
-	lastPosition := scanner.Lexer.cr
-	for {
-		frag, err := pr.handlePattern(scanner, pattern)
-		if err != nil {
-			if _, ok := err.(*ErrUnexpectedToken); ok {
-				// Reset scanner to the last match
-				scanner.Set(lastPosition)
-				return nil, nil
-			}
-			return nil, err
-		}
-		lastPosition = scanner.Lexer.cr
-		// Append rule patterns, other patterns are appended automatically
-		if !pattern.Container() {
-			scanner.Append(pattern, frag)
-		}
+) error {
+	if max != 0 && min > max {
+		panic(fmt.Errorf(
+			"min (%d) > max (%d) while parsing pattern Repeated(%s)",
+			min,
+			max,
+			pattern.Desig(),
+		))
 	}
-}
 
-func (pr Parser) parseOneOrMore(
-	scanner *scanner,
-	pattern Pattern,
-) (Fragment, error) {
-	num := 0
+	num := uint(0)
 	lastPosition := scanner.Lexer.cr
 	for {
+		if max != 0 && num >= max {
+			break
+		}
+
 		frag, err := pr.handlePattern(scanner, pattern)
 		if err != nil {
 			if _, ok := err.(*ErrUnexpectedToken); ok {
-				if num < 1 {
-					// No matches so far but already a mismatch
-					return nil, err
+				if min != 0 && num < min {
+					// Mismatch before the minimum is read
+					return err
 				}
 				// Reset scanner to the last match
 				scanner.Set(lastPosition)
-				return nil, nil
+				return nil
 			}
-			return nil, err
+			return err
 		}
 		num++
 		lastPosition = scanner.Lexer.cr
@@ -147,6 +136,8 @@ func (pr Parser) parseOneOrMore(
 			scanner.Append(pattern, frag)
 		}
 	}
+
+	return nil
 }
 
 func (pr Parser) parseSequence(

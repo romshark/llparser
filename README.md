@@ -126,23 +126,22 @@ Pattern: llparser.Sequence{
 },
 ```
 
-#### Pattern: ZeroOrMore
-`ZeroOrMore` tries to match one or many instances of a specific pattern but doesn't expect it to be matched:
+#### Pattern: Repeated
+
+`Repeated` tries to match a number repititions of a single pattern:
 
 ```go
-Pattern: llparser.ZeroOrMore{
-	Pattern: somePattern,
+Pattern: llparser.Repeated{
+    Pattern: somePattern,
 },
 ```
 
-#### Pattern: OneOrMore
-`OneOrMore` expects at least one or many instances of a specific pattern:
+By default, `Min` and `Max` are `0` which is equivalent to "unlimited".
 
-```go
-Pattern: llparser.OneOrMore{
-	Pattern: somePattern,
-},
-```
+- Setting `Min` to a greater number than `Max` when `Max` is greater `0` is illegal and will cause a panic.
+- Setting `Min` to `0` and `Max` to `1` is equivalent to declaring an optional.
+- Setting both `Min` and `Max` to `0` is equivalent to declaring an unlimited number of repetitions.
+- Setting `Min` to a positive number will require at least `Min` number of repetitions.
 
 #### Pattern: Either
 `Either` expects either of the given patterns selecting the first match:
