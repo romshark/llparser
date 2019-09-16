@@ -68,7 +68,7 @@ Rules can also recurse:
 ```go
 rule := &llparser.Rule{Kind: 1}
 rule.Pattern = llparser.Sequence{
-    llparser.Exact{Expectation: "="},
+    llparser.Exact{Expectation: []rune("=")},
     llparser.Repeated{
         Min:     0,
         Max:     1,
@@ -124,7 +124,7 @@ Pattern: llparser.Sequence{
         Max: 1,
         Pattern: llparser.Exact{
             Kind:        SomeKindConstant,
-            Expectation: "foo",
+            Expectation: []rune("foo"),
         },
     },
 },
