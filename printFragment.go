@@ -12,6 +12,7 @@ func PrintFragment(
 	fragment Fragment,
 	out io.Writer,
 	indent string,
+	kindTranslator func(FragmentKind) string,
 ) (bytesWritten int, err error) {
 	indb := []byte(indent)
 
@@ -35,7 +36,10 @@ func PrintFragment(
 	printFrag = func(ind uint, frag Fragment) bool {
 		switch fr := frag.(type) {
 		case *Construct:
-			if print(ind, fmt.Sprintf("%s {\n", fr.Token)) {
+			if print(ind, fmt.Sprintf(
+				"%s {\n",
+				fr.Token.String(kindTranslator),
+			)) {
 				return true
 			}
 			for _, elem := range fr.VElements {
@@ -50,7 +54,7 @@ func PrintFragment(
 				return true
 			}
 		case *Token:
-			if print(ind, fr.String()) {
+			if print(ind, fr.String(kindTranslator)) {
 				return true
 			}
 		default:

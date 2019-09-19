@@ -1,6 +1,9 @@
 package parser
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 // Token represents a terminal fragment
 type Token struct {
@@ -35,14 +38,25 @@ func (tk *Token) Src() []rune {
 func (tk *Token) Elements() []Fragment { return nil }
 
 // String stringifies the token
-func (tk *Token) String() string {
+func (tk *Token) String(
+	kindTranslator func(FragmentKind) string,
+) string {
 	fileName := "<unknown>"
 	if tk.VBegin.File != nil {
 		fileName = tk.VBegin.File.Name
 	}
+
+	kindName := strconv.Itoa(int(tk.VKind))
+	if kindTranslator != nil {
+		nm := kindTranslator(tk.VKind)
+		if nm != "" {
+			kindName = nm
+		}
+	}
+
 	return fmt.Sprintf(
-		"%d(%s: %d:%d-%d:%d '%s')",
-		tk.VKind,
+		"%s (%s: %d:%d-%d:%d '%s')",
+		kindName,
 		fileName,
 		tk.VBegin.Line, tk.VBegin.Column,
 		tk.VEnd.Line, tk.VEnd.Column,

@@ -35,7 +35,12 @@ func main() {
 	}
 	if *flagPrintParseTree {
 		// Print the parse-tree only
-		_, err := llparser.PrintFragment(mod.Frag, os.Stdout, "  ")
+		_, err := llparser.PrintFragment(
+			mod.Frag,
+			os.Stdout,
+			"  ",
+			parser.FragKindString,
+		)
 		if err != nil {
 			log.Fatal(err)
 		}

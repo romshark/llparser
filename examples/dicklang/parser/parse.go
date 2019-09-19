@@ -28,6 +28,23 @@ const (
 	FrDick
 )
 
+// FragKindString translates the kind identifier to its name
+func FragKindString(kind parser.FragmentKind) string {
+	switch kind {
+	case FrSpace:
+		return "Space"
+	case FrBalls:
+		return "Balls"
+	case FrShaft:
+		return "Shaft"
+	case FrHead:
+		return "Head"
+	case FrDick:
+		return "Dick"
+	}
+	return ""
+}
+
 // Parse parses a dick-lang file
 func Parse(fileName string, source []rune) (*ModelDicks, error) {
 
