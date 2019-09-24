@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 
-	llparser "github.com/romshark/llparser"
+	llp "github.com/romshark/llparser"
 	"github.com/romshark/llparser/examples/dicklang/parser"
 )
 
@@ -35,11 +35,12 @@ func main() {
 	}
 	if *flagPrintParseTree {
 		// Print the parse-tree only
-		_, err := llparser.PrintFragment(
+		_, err := llp.PrintFragment(
 			mod.Frag,
-			os.Stdout,
-			"  ",
-			parser.FragKindString,
+			llp.FragPrintOptions{
+				Out:         os.Stdout,
+				Indentation: []byte("  "),
+			},
 		)
 		if err != nil {
 			log.Fatal(err)
