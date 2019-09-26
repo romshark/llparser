@@ -88,7 +88,7 @@ func (pr Parser) parseRepeated(
 	num := uint(0)
 	lastPosition := scanner.Lexer.cr
 	for {
-		if max != 0 && num >= max {
+		if max != 0 && num >= max || scanner.Lexer.reachedEOF() {
 			break
 		}
 

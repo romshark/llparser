@@ -984,3 +984,31 @@ func TestParserErrRule(t *testing.T) {
 		require.Nil(t, mainFrag)
 	})
 }
+
+func TestRepeatedRecursiveRuleUntilEOF(t *testing.T) {
+	for _, src := range []string{
+		"x",
+		"xx",
+		"xxx",
+	} {
+		t.Run(src, func(t *testing.T) {
+			ruleA := &parser.Rule{Designation: "A"}
+			ruleA.Pattern = parser.Either{
+				parser.Exact{Expectation: []rune("x")},
+				ruleA,
+			}
+			ruleFile := &parser.Rule{
+				Designation: "file",
+				Pattern: parser.Repeated{
+					Min:     1,
+					Pattern: ruleA,
+				},
+			}
+
+			pr := parser.NewParser()
+			mainFrag, err := pr.Parse(newSource(src), ruleFile, nil)
+			require.NoError(t, err)
+			require.NotNil(t, mainFrag)
+		})
+	}
+}
