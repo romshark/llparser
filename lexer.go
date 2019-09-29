@@ -48,6 +48,9 @@ func (lx *lexer) ReadExact(
 	if len(expectation) < 1 {
 		panic(errors.New("empty string expected"))
 	}
+	if lx.reachedEOF() {
+		return nil, false, errEOF{}
+	}
 
 	token = &Token{
 		VKind:  kind,
@@ -86,20 +89,17 @@ func (lx *lexer) ReadExact(
 func (lx *lexer) ReadUntil(
 	fn func(Cursor) uint,
 	kind FragmentKind,
-) (
-	token *Token,
-	err error,
-) {
-	token = &Token{
+) (*Token, error) {
+	if lx.reachedEOF() {
+		return nil, errEOF{}
+	}
+
+	token := &Token{
 		VKind:  kind,
 		VBegin: lx.cr,
 	}
 
 	for {
-		if lx.reachedEOF() {
-			return finalizedToken(token, lx.cr), nil
-		}
-
 		skip := fn(lx.cr)
 		if skip < 1 {
 			break
@@ -125,6 +125,11 @@ func (lx *lexer) ReadUntil(
 				lx.cr.Column++
 				ix2++
 			}
+		}
+
+		if lx.reachedEOF() {
+			// Premature EOF
+			return finalizedToken(token, lx.cr), nil
 		}
 	}
 

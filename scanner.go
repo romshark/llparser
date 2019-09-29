@@ -25,16 +25,13 @@ func (sc *scanner) New() *scanner {
 func (sc *scanner) ReadExact(
 	expectation []rune,
 	kind FragmentKind,
-) (*Token, bool, error) {
-	nx, match, err := sc.Lexer.ReadExact(expectation, kind)
-	if err != nil {
-		return nil, false, err
+) (tk *Token, match bool, err error) {
+	tk, match, err = sc.Lexer.ReadExact(expectation, kind)
+	if err != nil || tk == nil {
+		return
 	}
-	if nx == nil {
-		return nil, match, nil
-	}
-	sc.Records = append(sc.Records, nx)
-	return nx, match, nil
+	sc.Records = append(sc.Records, tk)
+	return
 }
 
 // ReadUntil advances the scanner by 1 exact token returning either the read
@@ -42,16 +39,13 @@ func (sc *scanner) ReadExact(
 func (sc *scanner) ReadUntil(
 	fn func(Cursor) uint,
 	kind FragmentKind,
-) (*Token, error) {
-	nx, err := sc.Lexer.ReadUntil(fn, kind)
-	if err != nil {
-		return nil, err
+) (tk *Token, err error) {
+	tk, err = sc.Lexer.ReadUntil(fn, kind)
+	if err != nil || tk == nil {
+		return
 	}
-	if nx == nil {
-		return nil, nil
-	}
-	sc.Records = append(sc.Records, nx)
-	return nx, nil
+	sc.Records = append(sc.Records, tk)
+	return
 }
 
 // Append appends a fragment to the records
@@ -66,8 +60,7 @@ func (sc *scanner) Append(
 		sc.Records = append(sc.Records, fragment)
 		return
 	}
-	termPt := pattern.TerminalPattern()
-	if termPt != nil {
+	if termPt := pattern.TerminalPattern(); termPt != nil {
 		if _, ok := termPt.(*Rule); ok {
 			sc.Records = append(sc.Records, fragment)
 		}
@@ -106,12 +99,10 @@ func (sc *scanner) Set(cursor Cursor) {
 }
 
 // TidyUp removes all records after the current position
-func (sc *scanner) TidyUp() int {
-	removed := 0
+func (sc *scanner) TidyUp() (removed int) {
 	pos := sc.Lexer.cr
 	for ix := len(sc.Records) - 1; ix >= 0; ix-- {
-		rc := sc.Records[ix]
-		if rc.Begin().Index < pos.Index {
+		if sc.Records[ix].Begin().Index < pos.Index {
 			break
 		}
 		removed++
@@ -119,5 +110,5 @@ func (sc *scanner) TidyUp() int {
 
 	// Remove the last n records
 	sc.Records = sc.Records[:len(sc.Records)-removed]
-	return removed
+	return
 }

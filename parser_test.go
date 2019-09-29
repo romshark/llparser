@@ -564,7 +564,7 @@ func TestParserRepeatedMin1Max2(t *testing.T) {
 func TestParserRepeatedOptional(t *testing.T) {
 	expectedKind := parser.FragmentKind(100)
 	grammar := &parser.Rule{
-		Designation: "foo?",
+		Designation: "foo? bar?",
 		Pattern: parser.Sequence{
 			parser.Repeated{
 				Min:     0,

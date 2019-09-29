@@ -31,3 +31,7 @@ func (err *ErrUnexpectedToken) Error() string {
 		err.At,
 	)
 }
+
+type errEOF struct{}
+
+func (err errEOF) Error() string { return "eof" }

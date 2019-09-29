@@ -8,7 +8,8 @@ import (
 
 func helpEnsureEOF(t *testing.T, lex *lexer) {
 	tk, err := lex.ReadUntil(func(Cursor) uint { return 1 }, 0)
-	require.NoError(t, err)
+	require.Error(t, err)
+	require.IsType(t, errEOF{}, err)
 	require.Nil(t, tk)
 }
 
