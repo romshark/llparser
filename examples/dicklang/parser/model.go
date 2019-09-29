@@ -1,22 +1,20 @@
 package parser
 
-import (
-	parser "github.com/romshark/llparser"
-)
+import llp "github.com/romshark/llparser"
 
 // ModelDicks represents the model of a dicks source file
 type ModelDicks struct {
-	Frag  parser.Fragment
+	Frag  llp.Fragment
 	Dicks []ModelDick
 }
 
 // ModelDick represents the model of a dick expression
 type ModelDick struct {
-	Frag        parser.Fragment
+	Frag        llp.Fragment
 	ShaftLength uint
 }
 
-func (mod *ModelDicks) onDickDetected(frag parser.Fragment) error {
+func (mod *ModelDicks) onDickDetected(frag llp.Fragment) error {
 	// Register the newly parsed dick
 	mod.Dicks = append(mod.Dicks, ModelDick{
 		Frag:        frag,

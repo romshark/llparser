@@ -3,11 +3,11 @@ package parser
 import (
 	"errors"
 
-	parser "github.com/romshark/llparser"
+	llp "github.com/romshark/llparser"
 )
 
 // FragKind represents a dick-lang fragment kind
-type FragKind = parser.FragmentKind
+type FragKind = llp.FragmentKind
 
 const (
 	_ FragKind = iota
@@ -29,7 +29,7 @@ const (
 )
 
 // FragKindString translates the kind identifier to its name
-func FragKindString(kind parser.FragmentKind) string {
+func FragKindString(kind llp.FragmentKind) string {
 	switch kind {
 	case FrSpace:
 		return "Space"
@@ -52,14 +52,14 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 	mod := &ModelDicks{}
 
 	// Define the grammar
-	termHeadLeft := parser.Exact{Kind: FrHead, Expectation: []rune("<")}
-	termHeadRight := parser.Exact{Kind: FrHead, Expectation: []rune(">")}
-	termBalls1 := parser.Exact{Kind: FrBalls, Expectation: []rune("8")}
-	termBallsRight1 := parser.Exact{Kind: FrBalls, Expectation: []rune("B")}
-	termBallsLeft1 := parser.Exact{Kind: FrBalls, Expectation: []rune("3")}
+	termHeadLeft := llp.Exact{Kind: FrHead, Expectation: []rune("<")}
+	termHeadRight := llp.Exact{Kind: FrHead, Expectation: []rune(">")}
+	termBalls1 := llp.Exact{Kind: FrBalls, Expectation: []rune("8")}
+	termBallsRight1 := llp.Exact{Kind: FrBalls, Expectation: []rune("B")}
+	termBallsLeft1 := llp.Exact{Kind: FrBalls, Expectation: []rune("3")}
 
-	termSpace := parser.Lexed{
-		Fn: func(crs parser.Cursor) uint {
+	termSpace := llp.Lexed{
+		Fn: func(crs llp.Cursor) uint {
 			switch crs.File.Src[crs.Index] {
 			case ' ':
 				return 1
@@ -79,23 +79,23 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 		Kind: FrSpace,
 	}
 
-	shaftElement := parser.Either{
-		parser.Exact{Expectation: []rune("=")},
-		parser.Exact{Expectation: []rune(":")},
-		parser.Exact{Expectation: []rune("x")},
+	shaftElement := llp.Either{
+		llp.Exact{Expectation: []rune("=")},
+		llp.Exact{Expectation: []rune(":")},
+		llp.Exact{Expectation: []rune("x")},
 	}
 
-	ruleShaft := &parser.Rule{
+	ruleShaft := &llp.Rule{
 		Designation: "shaft",
 		Kind:        FrShaft,
-		Pattern:     parser.Repeated{Pattern: shaftElement, Min: 2},
+		Pattern:     llp.Repeated{Pattern: shaftElement, Min: 2},
 	}
 
-	ruleDickRight := &parser.Rule{
+	ruleDickRight := &llp.Rule{
 		Designation: "dick(right)",
 		Kind:        FrDick,
-		Pattern: parser.Sequence{
-			parser.Either{
+		Pattern: llp.Sequence{
+			llp.Either{
 				termBalls1,
 				termBallsRight1,
 			},
@@ -105,13 +105,13 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 		Action: mod.onDickDetected,
 	}
 
-	ruleDickLeft := &parser.Rule{
+	ruleDickLeft := &llp.Rule{
 		Designation: "dick(left)",
 		Kind:        FrDick,
-		Pattern: parser.Sequence{
+		Pattern: llp.Sequence{
 			termHeadLeft,
 			ruleShaft,
-			parser.Either{
+			llp.Either{
 				termBalls1,
 				termBallsLeft1,
 			},
@@ -119,21 +119,21 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 		Action: mod.onDickDetected,
 	}
 
-	ruleFile := &parser.Rule{
+	ruleFile := &llp.Rule{
 		Designation: "file",
-		Pattern: parser.Sequence{
-			parser.Repeated{
+		Pattern: llp.Sequence{
+			llp.Repeated{
 				Min:     0,
 				Max:     1,
 				Pattern: termSpace,
 			},
-			parser.Repeated{
-				Pattern: parser.Sequence{
-					parser.Either{
+			llp.Repeated{
+				Pattern: llp.Sequence{
+					llp.Either{
 						ruleDickLeft,
 						ruleDickRight,
 					},
-					parser.Repeated{
+					llp.Repeated{
 						Min:     0,
 						Max:     1,
 						Pattern: termSpace,
@@ -144,79 +144,79 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 	}
 
 	// Define error patterns
-	errRule := &parser.Rule{
-		Pattern: parser.Either{
+	errRule := &llp.Rule{
+		Pattern: llp.Either{
 			// Dick (right) without a head
-			&parser.Rule{
-				Pattern: parser.Sequence{
-					parser.Either{
+			&llp.Rule{
+				Pattern: llp.Sequence{
+					llp.Either{
 						termBalls1,
 						termBallsRight1,
 					},
 					ruleShaft,
 				},
-				Action: func(parser.Fragment) error {
+				Action: func(llp.Fragment) error {
 					return errors.New("that dick is missing a head")
 				},
 			},
 			// Dick (left) without a head
-			&parser.Rule{
-				Pattern: parser.Sequence{
+			&llp.Rule{
+				Pattern: llp.Sequence{
 					ruleShaft,
-					parser.Either{
+					llp.Either{
 						termBalls1,
 						termBallsLeft1,
 					},
 				},
-				Action: func(parser.Fragment) error {
+				Action: func(llp.Fragment) error {
 					return errors.New("that dick is missing a head")
 				},
 			},
 			// Dick (right) without balls
-			&parser.Rule{
-				Pattern: parser.Sequence{
+			&llp.Rule{
+				Pattern: llp.Sequence{
 					ruleShaft,
 					termHeadRight,
 				},
-				Action: func(parser.Fragment) error {
+				Action: func(llp.Fragment) error {
 					return errors.New("that dick is missing its balls")
 				},
 			},
 			// Dick (left) without balls
-			&parser.Rule{
-				Pattern: parser.Sequence{
+			&llp.Rule{
+				Pattern: llp.Sequence{
 					termHeadLeft,
 					ruleShaft,
 				},
-				Action: func(parser.Fragment) error {
+				Action: func(llp.Fragment) error {
 					return errors.New("that dick is missing its balls")
 				},
 			},
 			// Dick (right) too small
-			&parser.Rule{
-				Pattern: parser.Sequence{
-					parser.Either{
+			&llp.Rule{
+				Pattern: llp.Sequence{
+					llp.Either{
 						termBalls1,
 						termBallsRight1,
 					},
 					shaftElement,
 					termHeadRight,
 				},
-				Action: func(parser.Fragment) error {
+				Action: func(llp.Fragment) error {
 					return errors.New("that dick is too small")
 				},
 			},
 			// Dick (left) too small
-			&parser.Rule{
-				Pattern: parser.Sequence{
+			&llp.Rule{
+				Pattern: llp.Sequence{
 					termHeadLeft,
 					shaftElement,
-					parser.Either{
+					llp.Either{
 						termBalls1,
 						termBallsLeft1,
 					},
 				},
-				Action: func(parser.Fragment) error {
+				Action: func(llp.Fragment) error {
 					return errors.New("that dick is too small")
 				},
 			},
@@ -224,10 +224,10 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 	}
 
 	// Initialize lexer and parser
-	par := parser.NewParser()
+	par := llp.NewParser()
 
 	// Parse the source file
-	mainFrag, err := par.Parse(&parser.SourceFile{
+	mainFrag, err := par.Parse(&llp.SourceFile{
 		Name: fileName,
 		Src:  source,
 	}, ruleFile, errRule)
