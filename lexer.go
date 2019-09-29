@@ -46,7 +46,7 @@ func (lx *lexer) ReadExact(
 	err error,
 ) {
 	if len(expectation) < 1 {
-		return nil, false, errors.New("empty string expected")
+		panic(errors.New("empty string expected"))
 	}
 
 	token = &Token{
