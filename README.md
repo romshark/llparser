@@ -158,6 +158,16 @@ Pattern: llparser.Either{
 },
 ```
 
+#### Pattern: Not
+
+`Not` expects the given pattern to _not_ match. It'll make the parser return an `ErrUnexpectedToken` error if the given pattern is matched successfully.
+
+```go
+Pattern: llparser.Not{
+    Pattern: somePattern,
+},
+```
+
 ### The Parse-Tree
 
 A parse-tree defines the serialized representation of the parsed input stream and consists of `Fragment` interfaces represented by the main fragment returned by `llparser.Parse`. A fragment is a typed chunk of the source code pointing to a start and end position in the source file, defining the *kind* of the chunk and referring to its child-fragments.
