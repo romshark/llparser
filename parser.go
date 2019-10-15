@@ -25,27 +25,35 @@ func (pr Parser) handlePattern(
 			// Override expected pattern to the higher-order rule
 			err.Expected = pt
 		}
+
 	case Exact:
 		if scan.Lexer.reachedEOF() {
 			return nil, errEOF{}
 		}
-
 		// Exact terminal
 		frag, err = pr.parseExact(scan, pt)
+
 	case Lexed:
 		if scan.Lexer.reachedEOF() {
 			return nil, errEOF{}
 		}
-
 		frag, err = pr.parseLexed(scan, pt)
+
 	case Repeated:
 		err = pr.parseRepeated(scan, pt.Min, pt.Max, pt.Pattern)
+
 	case Sequence:
 		// Sequence
 		err = pr.parseSequence(scan, pt)
+
 	case Either:
 		// Choice
 		frag, err = pr.parseEither(scan, pt)
+
+	case Not:
+		// Expect no match
+		err = pr.parseNot(scan, pt)
+
 	default:
 		panic(fmt.Errorf(
 			"unsupported pattern type: %s",
@@ -53,6 +61,26 @@ func (pr Parser) handlePattern(
 		))
 	}
 	return
+}
+
+func (pr Parser) parseNot(scan *scanner, ptr Not) error {
+	beforeCr := scan.Lexer.cr
+	_, err := pr.handlePattern(scan, ptr.Pattern)
+	switch err := err.(type) {
+	case *ErrUnexpectedToken:
+		scan.Set(beforeCr)
+		return nil
+	case errEOF:
+		scan.Set(beforeCr)
+		return nil
+	case nil:
+		return &ErrUnexpectedToken{
+			At:       beforeCr,
+			Expected: ptr,
+		}
+	default:
+		return err
+	}
 }
 
 func (pr Parser) parseLexed(

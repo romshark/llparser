@@ -133,3 +133,19 @@ func (eth Either) Desig() string {
 	}
 	return "either of [" + strings.Join(str, ", ") + "]"
 }
+
+// Not represents a pattern that's expected to not be matched
+type Not struct {
+	Pattern Pattern
+}
+
+// Container implements the Pattern interface
+func (Not) Container() bool { return true }
+
+// TerminalPattern implements the Pattern interface
+func (not Not) TerminalPattern() Pattern { return not.Pattern }
+
+// Desig implements the Pattern interface
+func (not Not) Desig() string {
+	return "not a " + not.Pattern.Desig()
+}

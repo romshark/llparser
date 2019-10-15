@@ -35,6 +35,10 @@ func (pr *Parser) newGrammar() *llp.Rule {
 		Kind: FrSpace,
 	}
 
+	termAnything := llp.Lexed{
+		Fn: func(crs llp.Cursor) uint { return 0 },
+	}
+
 	termConstTrue := llp.Exact{
 		Kind:        FrConstTrue,
 		Expectation: []rune("true"),
@@ -101,6 +105,7 @@ func (pr *Parser) newGrammar() *llp.Rule {
 			factor,
 		},
 		parentheses,
+		llp.Not{Pattern: termAnything},
 		expression,
 	}
 

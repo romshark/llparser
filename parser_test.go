@@ -1012,3 +1012,48 @@ func TestRepeatedRecursiveRuleUntilEOF(t *testing.T) {
 		})
 	}
 }
+
+func TestParserNot(t *testing.T) {
+	t.Run("NoMatch", func(t *testing.T) {
+		pr := llp.NewParser()
+		src := newSource("foo")
+		expectedKind := llp.FragmentKind(100)
+		mainFrag, err := pr.Parse(src, &llp.Rule{
+			Designation: "Foo",
+			Pattern:     llp.Not{Pattern: testR_foo},
+			Kind:        expectedKind,
+		}, nil)
+
+		require.Error(t, err)
+		require.Equal(
+			t,
+			"unexpected token, expected {not a "+
+				"keyword foo} at test.txt:1:1",
+			err.Error(),
+		)
+		require.Nil(t, mainFrag)
+	})
+
+	t.Run("Match", func(t *testing.T) {
+		pr := llp.NewParser()
+		src := newSource("foobar")
+		expectedKind := llp.FragmentKind(100)
+		mainFrag, err := pr.Parse(src, &llp.Rule{
+			Designation: "Foo !Foo Bar",
+			Pattern: llp.Sequence{
+				testR_foo,
+				llp.Not{Pattern: testR_foo},
+				testR_bar,
+			},
+			Kind: expectedKind,
+		}, nil)
+		require.NoError(t, err)
+		require.NotNil(t, mainFrag)
+		checkFrag(t, src, mainFrag, expectedKind, C{1, 1}, C{1, 7}, 2)
+
+		// Check elements
+		elements := mainFrag.Elements()
+		checkFrag(t, src, elements[0], FrFoo, C{1, 1}, C{1, 4}, 1)
+		checkFrag(t, src, elements[1], FrBar, C{1, 4}, C{1, 7}, 1)
+	})
+}
