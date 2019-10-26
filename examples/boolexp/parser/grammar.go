@@ -4,8 +4,8 @@ import (
 	llp "github.com/romshark/llparser"
 )
 
-func optional(pattern llp.Pattern) llp.Repeated {
-	return llp.Repeated{
+func optional(pattern llp.Pattern) *llp.Repeated {
+	return &llp.Repeated{
 		Min:     0,
 		Max:     1,
 		Pattern: pattern,
@@ -13,8 +13,8 @@ func optional(pattern llp.Pattern) llp.Repeated {
 }
 
 // newGrammar returns the grammar of a boolean expression
-func (pr *Parser) newGrammar() *llp.Rule {
-	termSpace := llp.Lexed{
+func newGrammar() *llp.Rule {
+	termSpace := &llp.Lexed{
 		Fn: func(crs llp.Cursor) uint {
 			switch crs.File.Src[crs.Index] {
 			case ' ':
@@ -35,41 +35,41 @@ func (pr *Parser) newGrammar() *llp.Rule {
 		Kind: FrSpace,
 	}
 
-	termAnything := llp.Lexed{
+	termAnything := &llp.Lexed{
 		Fn: func(crs llp.Cursor) uint { return 0 },
 	}
 
-	termConstTrue := llp.Exact{
+	termConstTrue := &llp.Exact{
 		Kind:        FrConstTrue,
 		Expectation: []rune("true"),
 	}
 
-	termConstFalse := llp.Exact{
+	termConstFalse := &llp.Exact{
 		Kind:        FrConstFalse,
 		Expectation: []rune("false"),
 	}
 
-	termParOpen := llp.Exact{
+	termParOpen := &llp.Exact{
 		Kind:        FrParOpen,
 		Expectation: []rune("("),
 	}
 
-	termParClose := llp.Exact{
+	termParClose := &llp.Exact{
 		Kind:        FrParClose,
 		Expectation: []rune(")"),
 	}
 
-	termOprOr := llp.Exact{
+	termOprOr := &llp.Exact{
 		Kind:        FrOprOr,
 		Expectation: []rune("||"),
 	}
 
-	termOprAnd := llp.Exact{
+	termOprAnd := &llp.Exact{
 		Kind:        FrOprAnd,
 		Expectation: []rune("&&"),
 	}
 
-	termOprNeg := llp.Exact{
+	termOprNeg := &llp.Exact{
 		Kind:        FrOprNeg,
 		Expectation: []rune("!"),
 	}
@@ -114,7 +114,7 @@ func (pr *Parser) newGrammar() *llp.Rule {
 		Kind:        FrExprTerm,
 		Pattern: llp.Sequence{
 			factor,
-			llp.Repeated{
+			&llp.Repeated{
 				Pattern: llp.Sequence{
 					optional(termSpace),
 					termOprAnd,
@@ -127,7 +127,7 @@ func (pr *Parser) newGrammar() *llp.Rule {
 
 	expression.Pattern = llp.Sequence{
 		term,
-		llp.Repeated{
+		&llp.Repeated{
 			Pattern: llp.Sequence{
 				optional(termSpace),
 				termOprOr,

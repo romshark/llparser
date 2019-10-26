@@ -17,7 +17,11 @@ var flagPrintParseTree = flag.Bool("ptree", false, "print parse-tree")
 func main() {
 	flag.Parse()
 
-	prs := parser.NewParser()
+	prs, err := parser.NewParser()
+	if err != nil {
+		log.Fatalf("fatal: %s", err)
+	}
+
 	ast, err := prs.Parse("example.boolexp", []rune(*flagSrc))
 	if err != nil {
 		log.Fatalf("ERR: %s", err)
