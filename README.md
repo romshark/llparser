@@ -32,7 +32,7 @@ A grammar always begins with a root rule. A rule is a [non-terminal symbol](http
 mainRule := &llparser.Rule{
     Designation: "name of the rule",
     Kind: 100,
-    Pattern: llparser.Exact{
+    Pattern: &llparser.Exact{
         Kind:        101,
         Expectation: []rune("string"),
     },
@@ -52,7 +52,7 @@ Rules can be nested:
 
 ```go
 ruleTwo := &llparser.Rule{
-    Pattern: llparser.Exact{
+    Pattern: &llparser.Exact{
         Kind:        101,
         Expectation: []rune("string"),
     },
@@ -68,8 +68,8 @@ Rules can also recurse:
 ```go
 rule := &llparser.Rule{Kind: 1}
 rule.Pattern = llparser.Sequence{
-    llparser.Exact{Expectation: []rune("=")},
-    llparser.Repeated{
+    &llparser.Exact{Expectation: []rune("=")},
+    &llparser.Repeated{
         Min:     0,
         Max:     1,
         Pattern: rule,
@@ -84,7 +84,7 @@ rule.Pattern = llparser.Sequence{
 `Exact` expects a particular sequence of characters to be lexed:
 
 ```go
-Pattern: llparser.Exact{
+Pattern: &llparser.Exact{
     Kind:        SomeKindConstant,
     Expectation: []rune("some string"),
 },
@@ -95,7 +95,7 @@ Pattern: llparser.Exact{
 `Lexed` tries to lex an arbitrary sequence of characters according to `Fn`:
 
 ```go
-Pattern: llparser.Lexed{
+Pattern: &llparser.Lexed{
     Designation: "some lexed terminal",
     Kind:        SomeKindConstant,
     Fn: func(crs llparser.Cursor) uint {
@@ -119,10 +119,10 @@ Pattern: llparser.Lexed{
 Pattern: llparser.Sequence{
     somePattern,
     llparser.Term(SomeKindConstant),
-    llparser.Repeated{
+    &llparser.Repeated{
         Min: 0,
         Max: 1,
-        Pattern: llparser.Exact{
+        Pattern: &llparser.Exact{
             Kind:        SomeKindConstant,
             Expectation: []rune("foo"),
         },
@@ -135,7 +135,7 @@ Pattern: llparser.Sequence{
 `Repeated` tries to match a number of repetitions of a single pattern:
 
 ```go
-Pattern: llparser.Repeated{
+Pattern: &llparser.Repeated{
     Pattern: somePattern,
 },
 ```
@@ -185,18 +185,18 @@ doesn't match then the default `ErrUnexpectedToken` error is returned as usual.
 ```go
 grammar := &parser.Rule{
     Pattern: parser.Sequence{
-        parser.Exact{Expectation: []rune("foo")},
-        parser.Exact{Expectation: []rune("...")},
+        &parser.Exact{Expectation: []rune("foo")},
+        &parser.Exact{Expectation: []rune("...")},
     },
 }
 
 errRule := &parser.Rule{
     Pattern: parser.Either{
         parser.OneOrMore{
-            Pattern: parser.Exact{Expectation: []rune(";")},
+            Pattern: &parser.Exact{Expectation: []rune(";")},
         },
         parser.OneOrMore{
-            Pattern: parser.Exact{Expectation: []rune(".")},
+            Pattern: &parser.Exact{Expectation: []rune(".")},
         },
     },
     Action: func(fr parser.Fragment) error {

@@ -25,13 +25,13 @@ type Exact struct {
 }
 
 // Container implements the Pattern interface
-func (Exact) Container() bool { return false }
+func (*Exact) Container() bool { return false }
 
 // TerminalPattern implements the Pattern interface
-func (Exact) TerminalPattern() Pattern { return nil }
+func (*Exact) TerminalPattern() Pattern { return nil }
 
 // Desig implements the Pattern interface
-func (tm Exact) Desig() string {
+func (tm *Exact) Desig() string {
 	return "'" + string(tm.Expectation) + "'"
 }
 
@@ -43,13 +43,13 @@ type Lexed struct {
 }
 
 // Container implements the Pattern interface
-func (Lexed) Container() bool { return false }
+func (*Lexed) Container() bool { return false }
 
 // TerminalPattern implements the Pattern interface
-func (Lexed) TerminalPattern() Pattern { return nil }
+func (*Lexed) TerminalPattern() Pattern { return nil }
 
 // Desig implements the Pattern interface
-func (ck Lexed) Desig() string { return ck.Designation }
+func (ck *Lexed) Desig() string { return ck.Designation }
 
 // Sequence represents an exact sequence of arbitrary patterns
 type Sequence []Pattern
@@ -77,42 +77,42 @@ type Repeated struct {
 }
 
 // Container implements the Pattern interface
-func (Repeated) Container() bool { return true }
+func (*Repeated) Container() bool { return true }
 
 // TerminalPattern implements the Pattern interface
-func (oom Repeated) TerminalPattern() Pattern { return oom.Pattern }
+func (rpt *Repeated) TerminalPattern() Pattern { return rpt.Pattern }
 
 // Desig implements the Pattern interface
-func (oom Repeated) Desig() string {
+func (rpt *Repeated) Desig() string {
 	switch {
-	case oom.Max < 1:
+	case rpt.Max < 1:
 		return fmt.Sprintf(
 			"%d+ repetitions of %s",
-			oom.Min,
-			oom.Pattern.Desig(),
+			rpt.Min,
+			rpt.Pattern.Desig(),
 		)
-	case oom.Max == 0 && oom.Min == 0:
+	case rpt.Max == 0 && rpt.Min == 0:
 		return fmt.Sprintf(
 			"0+ repetitions of %s",
-			oom.Pattern.Desig(),
+			rpt.Pattern.Desig(),
 		)
-	case oom.Max == 0 && oom.Min == 1:
+	case rpt.Max == 0 && rpt.Min == 1:
 		return fmt.Sprintf(
 			"optional %s",
-			oom.Pattern.Desig(),
+			rpt.Pattern.Desig(),
 		)
-	case oom.Max == oom.Min:
+	case rpt.Max == rpt.Min:
 		return fmt.Sprintf(
 			"exactly %d repetitions of %s",
-			oom.Min,
-			oom.Pattern.Desig(),
+			rpt.Min,
+			rpt.Pattern.Desig(),
 		)
 	}
 	return fmt.Sprintf(
 		"%d-%d repetitions of %s",
-		oom.Min,
-		oom.Max,
-		oom.Pattern.Desig(),
+		rpt.Min,
+		rpt.Max,
+		rpt.Pattern.Desig(),
 	)
 }
 

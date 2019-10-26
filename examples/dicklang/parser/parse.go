@@ -2,6 +2,7 @@ package parser
 
 import (
 	"errors"
+	"fmt"
 
 	llp "github.com/romshark/llparser"
 )
@@ -52,13 +53,13 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 	mod := &ModelDicks{}
 
 	// Define the grammar
-	termHeadLeft := llp.Exact{Kind: FrHead, Expectation: []rune("<")}
-	termHeadRight := llp.Exact{Kind: FrHead, Expectation: []rune(">")}
-	termBalls1 := llp.Exact{Kind: FrBalls, Expectation: []rune("8")}
-	termBallsRight1 := llp.Exact{Kind: FrBalls, Expectation: []rune("B")}
-	termBallsLeft1 := llp.Exact{Kind: FrBalls, Expectation: []rune("3")}
+	termHeadLeft := &llp.Exact{Kind: FrHead, Expectation: []rune("<")}
+	termHeadRight := &llp.Exact{Kind: FrHead, Expectation: []rune(">")}
+	termBalls1 := &llp.Exact{Kind: FrBalls, Expectation: []rune("8")}
+	termBallsRight1 := &llp.Exact{Kind: FrBalls, Expectation: []rune("B")}
+	termBallsLeft1 := &llp.Exact{Kind: FrBalls, Expectation: []rune("3")}
 
-	termSpace := llp.Lexed{
+	termSpace := &llp.Lexed{
 		Fn: func(crs llp.Cursor) uint {
 			switch crs.File.Src[crs.Index] {
 			case ' ':
@@ -80,15 +81,15 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 	}
 
 	shaftElement := llp.Either{
-		llp.Exact{Expectation: []rune("=")},
-		llp.Exact{Expectation: []rune(":")},
-		llp.Exact{Expectation: []rune("x")},
+		&llp.Exact{Expectation: []rune("=")},
+		&llp.Exact{Expectation: []rune(":")},
+		&llp.Exact{Expectation: []rune("x")},
 	}
 
 	ruleShaft := &llp.Rule{
 		Designation: "shaft",
 		Kind:        FrShaft,
-		Pattern:     llp.Repeated{Pattern: shaftElement, Min: 2},
+		Pattern:     &llp.Repeated{Pattern: shaftElement, Min: 2},
 	}
 
 	ruleDickRight := &llp.Rule{
@@ -122,18 +123,18 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 	ruleFile := &llp.Rule{
 		Designation: "file",
 		Pattern: llp.Sequence{
-			llp.Repeated{
+			&llp.Repeated{
 				Min:     0,
 				Max:     1,
 				Pattern: termSpace,
 			},
-			llp.Repeated{
+			&llp.Repeated{
 				Pattern: llp.Sequence{
 					llp.Either{
 						ruleDickLeft,
 						ruleDickRight,
 					},
-					llp.Repeated{
+					&llp.Repeated{
 						Min:     0,
 						Max:     1,
 						Pattern: termSpace,
@@ -224,13 +225,16 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 	}
 
 	// Initialize lexer and parser
-	par := llp.NewParser()
+	par, err := llp.NewParser(ruleFile, errRule)
+	if err != nil {
+		return nil, fmt.Errorf("parser init: %w", err)
+	}
 
 	// Parse the source file
 	mainFrag, err := par.Parse(&llp.SourceFile{
 		Name: fileName,
 		Src:  source,
-	}, ruleFile, errRule)
+	})
 	if err != nil {
 		return nil, err
 	}

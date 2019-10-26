@@ -15,21 +15,21 @@ func TestPrintFragment(t *testing.T) {
 		options llp.FragPrintOptions,
 		expectation string,
 	) {
-		pr := llp.NewParser()
-		src := newSource("abcdef")
-		mainFrag, err := pr.Parse(src, &llp.Rule{
+		pr := newParser(t, &llp.Rule{
 			Kind: llp.FragmentKind(100),
 			Pattern: llp.Sequence{
-				llp.Exact{
+				&llp.Exact{
 					Kind:        llp.FragmentKind(101),
 					Expectation: []rune("abc"),
 				},
-				llp.Exact{
+				&llp.Exact{
 					Kind:        llp.FragmentKind(102),
 					Expectation: []rune("def"),
 				},
 			},
 		}, nil)
+
+		mainFrag, err := pr.Parse(newSource("abcdef"))
 		require.NoError(t, err)
 		require.NotNil(t, mainFrag)
 

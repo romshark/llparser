@@ -8,17 +8,16 @@ import (
 
 // Parser represents a boolean expression parser
 type Parser struct {
-	prs     llp.Parser
-	grammar *llp.Rule
+	prs *llp.Parser
 }
 
 // NewParser creates a new parser instance
-func NewParser() *Parser {
-	pr := &Parser{
-		prs: llp.NewParser(),
+func NewParser() (*Parser, error) {
+	parser, err := llp.NewParser(newGrammar(), nil)
+	if err != nil {
+		return nil, err
 	}
-	pr.grammar = pr.newGrammar()
-	return pr
+	return &Parser{prs: parser}, nil
 }
 
 // Parse parses a boolean expression
@@ -37,7 +36,7 @@ func (pr *Parser) Parse(
 	mainFrag, err := pr.prs.Parse(&llp.SourceFile{
 		Name: fileName,
 		Src:  src,
-	}, pr.grammar, nil)
+	})
 	if err != nil {
 		return nil, err
 	}

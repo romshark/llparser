@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/romshark/llparser/examples/boolexp/parser"
 	prs "github.com/romshark/llparser/examples/boolexp/parser"
 	"github.com/stretchr/testify/require"
 )
@@ -12,6 +13,12 @@ import (
 type Expectation struct {
 	AST    string
 	Result bool
+}
+
+func newParser(t *testing.T) *parser.Parser {
+	pr, err := parser.NewParser()
+	require.NoError(t, err)
+	return pr
 }
 
 // compareStringifiedAST helps comparing the expected and actual ASTs
@@ -38,7 +45,7 @@ type Test map[string]Expectation
 func (ts Test) Exec(t *testing.T) {
 	for expr, expectation := range ts {
 		t.Run(expr, func(t *testing.T) {
-			pr := prs.NewParser()
+			pr := newParser(t)
 			ast, err := pr.Parse("test.boolexp", []rune(expr))
 			require.NoError(t, err)
 			require.NotNil(t, ast)

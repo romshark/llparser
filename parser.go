@@ -7,11 +7,28 @@ import (
 )
 
 // Parser represents a parser
-type Parser struct{}
+type Parser struct {
+	grammar    *Rule
+	errGrammar *Rule
+}
 
 // NewParser creates a new parser instance
-func NewParser() Parser {
-	return Parser{}
+func NewParser(grammar *Rule, errGrammar *Rule) (*Parser, error) {
+	if grammar == nil {
+		return nil, errors.New("missing grammar")
+	}
+	if err := ValidatePattern(grammar); err != nil {
+		return nil, fmt.Errorf("invalid grammar: %w", err)
+	}
+	if errGrammar != nil {
+		if err := ValidatePattern(errGrammar); err != nil {
+			return nil, fmt.Errorf("invalid error-grammar: %w", err)
+		}
+	}
+	return &Parser{
+		grammar:    grammar,
+		errGrammar: errGrammar,
+	}, nil
 }
 
 func (pr Parser) handlePattern(
@@ -26,20 +43,20 @@ func (pr Parser) handlePattern(
 			err.Expected = pt
 		}
 
-	case Exact:
+	case *Exact:
 		if scan.Lexer.reachedEOF() {
 			return nil, errEOF{}
 		}
 		// Exact terminal
 		frag, err = pr.parseExact(scan, pt)
 
-	case Lexed:
+	case *Lexed:
 		if scan.Lexer.reachedEOF() {
 			return nil, errEOF{}
 		}
 		frag, err = pr.parseLexed(scan, pt)
 
-	case Repeated:
+	case *Repeated:
 		err = pr.parseRepeated(scan, pt.Min, pt.Max, pt.Pattern)
 
 	case Sequence:
@@ -85,7 +102,7 @@ func (pr Parser) parseNot(scan *scanner, ptr Not) error {
 
 func (pr Parser) parseLexed(
 	scanner *scanner,
-	expected Lexed,
+	expected *Lexed,
 ) (Fragment, error) {
 	beforeCr := scanner.Lexer.cr
 	tk, err := scanner.ReadUntil(expected.Fn, expected.Kind)
@@ -107,15 +124,6 @@ func (pr Parser) parseRepeated(
 	max uint,
 	pattern Pattern,
 ) error {
-	if max != 0 && min > max {
-		panic(fmt.Errorf(
-			"min (%d) > max (%d) while parsing pattern Repeated(%s)",
-			min,
-			max,
-			pattern.Desig(),
-		))
-	}
-
 	num := uint(0)
 	lastPosition := scanner.Lexer.cr
 	for {
@@ -213,7 +221,7 @@ func (pr Parser) parseEither(
 
 func (pr Parser) parseExact(
 	scanner *scanner,
-	exact Exact,
+	exact *Exact,
 ) (Fragment, error) {
 	beforeCr := scanner.Lexer.cr
 	tk, match, err := scanner.ReadExact(
@@ -275,27 +283,16 @@ func (pr Parser) tryErrRule(
 }
 
 // Parse parses the given rule
-func (pr Parser) Parse(
-	source *SourceFile,
-	rule *Rule,
-	errRule *Rule,
-) (Fragment, error) {
-	if source == nil {
-		return nil, errors.New("missing source file")
-	}
-	if rule == nil {
-		return nil, errors.New("missing main grammar rule")
-	}
-
+func (pr *Parser) Parse(source *SourceFile) (Fragment, error) {
 	lex := &lexer{cr: NewCursor(source)}
 
-	mainFrag, err := pr.parseRule(newScanner(lex), rule)
+	mainFrag, err := pr.parseRule(newScanner(lex), pr.grammar)
 	if err != nil {
 		if err, ok := err.(*ErrUnexpectedToken); ok {
 			// Reset the lexer to the start position of the error
 			lex.cr = err.At
 		}
-		if err := pr.tryErrRule(lex, errRule, err); err != nil {
+		if err := pr.tryErrRule(lex, pr.errGrammar, err); err != nil {
 			return nil, err
 		}
 		return nil, err
@@ -316,14 +313,14 @@ func (pr Parser) Parse(
 		return nil, err
 	}
 	if last != nil {
-		if errRule != nil {
+		if pr.errGrammar != nil {
 			// Try to match an error-pattern
 			lex.cr = last.VBegin
 		}
 
 		unexpErr := &ErrUnexpectedToken{At: last.VBegin}
 
-		if err := pr.tryErrRule(lex, errRule, unexpErr); err != nil {
+		if err := pr.tryErrRule(lex, pr.errGrammar, unexpErr); err != nil {
 			return nil, err
 		}
 
