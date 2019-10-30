@@ -98,16 +98,22 @@ Pattern: &llparser.Exact{
 Pattern: &llparser.Lexed{
     Designation: "some lexed terminal",
     Kind:        SomeKindConstant,
-    Fn: func(crs llparser.Cursor) uint {
-        if crs.File.Src[crs.Index] == '|' {
-            return 0
+    MinLen:      1,
+    Fn: func(index uint, cursor llparser.Cursor) bool {
+        if index > 0 && cursor.File.Src[cursor.Index] == '|' {
+            // Stop lexing on `|` when it's not the first rune
+            return false
         }
-        return 1
+        // Continue lexing
+        return true
     },
 },
 ```
 
-`Fn` returns either `0` for ending the sequence, `1` for advancing for 1 rune or any positive integer _n_ to advance for _n_ runes.
+The lexing is aborted when `Fn` returns `false`, otherwise the lexer
+advances by 1 rune. The first parameter `index` defines the index of the
+lexed sequence. `MinLen` defines the minimum number of runes required
+to be matched.
 
 ### Combinators
 

@@ -39,7 +39,8 @@ func (tm *Exact) Desig() string {
 type Lexed struct {
 	Kind        FragmentKind
 	Designation string
-	Fn          func(Cursor) uint
+	MinLen      uint
+	Fn          func(index uint, cursor Cursor) bool
 }
 
 // Container implements the Pattern interface

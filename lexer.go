@@ -87,7 +87,7 @@ func (lx *lexer) ReadExact(
 
 // ReadUntil reads until fn returns zero skipping as many runes as fn returns
 func (lx *lexer) ReadUntil(
-	fn func(Cursor) uint,
+	fn func(uint, Cursor) bool,
 	kind FragmentKind,
 ) (*Token, error) {
 	if lx.reachedEOF() {
@@ -98,39 +98,20 @@ func (lx *lexer) ReadUntil(
 		VKind:  kind,
 		VBegin: lx.cr,
 	}
+	subLexerIndex := uint(0)
 
 	for {
-		skip := fn(lx.cr)
-		if skip < 1 {
+		if lx.reachedEOF() || !fn(subLexerIndex, lx.cr) {
 			break
 		}
-		for ix2 := uint(0); ix2 < skip; {
-			if lx.reachedEOF() {
-				return finalizedToken(token, lx.cr), nil
-			}
-
-			// Check against the expectation
-			skipSpace := isLineBreak(lx.cr.File.Src, lx.cr.Index)
-
-			// Advance the cursor
-			if skipSpace != -1 {
-				// Space character
-				lx.cr.Index += uint(skipSpace)
-				lx.cr.Column = 1
-				lx.cr.Line++
-				ix2 += uint(skipSpace)
-			} else {
-				// Non-space character
-				lx.cr.Index++
-				lx.cr.Column++
-				ix2++
-			}
+		if lx.cr.File.Src[lx.cr.Index] == '\n' {
+			lx.cr.Column = 1
+			lx.cr.Line++
+		} else {
+			lx.cr.Column++
 		}
-
-		if lx.reachedEOF() {
-			// Premature EOF
-			return finalizedToken(token, lx.cr), nil
-		}
+		subLexerIndex++
+		lx.cr.Index++
 	}
 
 	return finalizedToken(token, lx.cr), nil

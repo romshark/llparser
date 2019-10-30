@@ -60,22 +60,18 @@ func Parse(fileName string, source []rune) (*ModelDicks, error) {
 	termBallsLeft1 := &llp.Exact{Kind: FrBalls, Expectation: []rune("3")}
 
 	termSpace := &llp.Lexed{
-		Fn: func(crs llp.Cursor) uint {
+		Fn: func(ix uint, crs llp.Cursor) bool {
 			switch crs.File.Src[crs.Index] {
 			case ' ':
-				return 1
+				return true
 			case '\t':
-				return 1
+				return true
 			case '\n':
-				return 1
+				return true
 			case '\r':
-				next := crs.Index + 1
-				if next < uint(len(crs.File.Src)) &&
-					crs.File.Src[next] == '\n' {
-					return 2
-				}
+				return true
 			}
-			return 0
+			return false
 		},
 		Kind: FrSpace,
 	}

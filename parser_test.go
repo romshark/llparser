@@ -24,35 +24,31 @@ const (
 var (
 	termSpace = &llp.Lexed{
 		Designation: "space",
-		Fn: func(crs llp.Cursor) uint {
+		Fn: func(_ uint, crs llp.Cursor) bool {
 			switch crs.File.Src[crs.Index] {
 			case ' ':
-				return 1
+				return true
 			case '\t':
-				return 1
+				return true
 			case '\n':
-				return 1
+				return true
 			case '\r':
-				next := crs.Index + 1
-				if next < uint(len(crs.File.Src)) &&
-					crs.File.Src[next] == '\n' {
-					return 2
-				}
+				return true
 			}
-			return 0
+			return false
 		},
 		Kind: FrSpace,
 	}
 	termLatinWord = &llp.Lexed{
 		Designation: "latin word",
-		Fn: func(crs llp.Cursor) uint {
+		Fn: func(_ uint, crs llp.Cursor) bool {
 			rn := crs.File.Src[crs.Index]
 			if rn >= 48 && rn <= 57 ||
 				rn >= 65 && rn <= 90 ||
 				rn >= 97 && rn <= 122 {
-				return 1
+				return true
 			}
-			return 0
+			return false
 		},
 		Kind: FrWord,
 	}
@@ -211,11 +207,8 @@ func TestParserSequenceErr(t *testing.T) {
 				termSpace,
 				&llp.Lexed{
 					Designation: "lexed token",
-					Fn: func(crs llp.Cursor) uint {
-						if crs.File.Src[crs.Index] == 'b' {
-							return 1
-						}
-						return 0
+					Fn: func(_ uint, crs llp.Cursor) bool {
+						return crs.File.Src[crs.Index] == 'b'
 					},
 				},
 			},
@@ -835,12 +828,12 @@ func TestParserActionErr(t *testing.T) {
 }
 
 func TestParserLexed(t *testing.T) {
-	fn := func(crs llp.Cursor) uint {
+	fn := func(_ uint, crs llp.Cursor) bool {
 		rn := crs.File.Src[crs.Index]
 		if (rn >= 0x0410 && rn <= 0x044F) || rn == '\n' {
-			return 1
+			return true
 		}
-		return 0
+		return false
 	}
 	expectedKind := llp.FragmentKind(100)
 
@@ -866,12 +859,12 @@ func TestParserLexed(t *testing.T) {
 }
 
 func TestParserLexedErr(t *testing.T) {
-	fn := func(crs llp.Cursor) uint {
+	fn := func(_ uint, crs llp.Cursor) bool {
 		rn := crs.File.Src[crs.Index]
 		if (rn >= 0x0410 && rn <= 0x044F) || rn == '\n' {
-			return 1
+			return true
 		}
-		return 0
+		return false
 	}
 	expectedKind := llp.FragmentKind(100)
 
@@ -879,6 +872,26 @@ func TestParserLexedErr(t *testing.T) {
 		Pattern: &llp.Lexed{
 			Kind:        expectedKind,
 			Designation: "lexed token",
+			Fn:          fn,
+		},
+		Kind: expectedKind,
+	}, nil)
+
+	mainFrag, err := pr.Parse(newSource("abc"))
+	require.Error(t, err)
+	require.Nil(t, mainFrag)
+}
+
+func TestParserLexedErrBelowMinLen(t *testing.T) {
+	minLen := uint(3)
+	fn := func(idx uint, _ llp.Cursor) bool { return idx < minLen-1 }
+	expectedKind := llp.FragmentKind(100)
+
+	pr := newParser(t, &llp.Rule{
+		Pattern: &llp.Lexed{
+			Kind:        expectedKind,
+			Designation: "lexed token",
+			MinLen:      minLen,
 			Fn:          fn,
 		},
 		Kind: expectedKind,
