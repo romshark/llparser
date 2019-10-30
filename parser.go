@@ -109,7 +109,7 @@ func (pr Parser) parseLexed(
 	if err != nil {
 		return nil, err
 	}
-	if tk == nil {
+	if tk == nil || tk.VEnd.Index-tk.VBegin.Index < expected.MinLen {
 		return nil, &ErrUnexpectedToken{
 			At:       beforeCr,
 			Expected: expected,
@@ -300,7 +300,7 @@ func (pr *Parser) Parse(source *SourceFile) (Fragment, error) {
 
 	// Ensure EOF
 	last, err := lex.ReadUntil(
-		func(Cursor) uint { return 1 },
+		func(uint, Cursor) bool { return true },
 		0,
 	)
 	switch err := err.(type) {

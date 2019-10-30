@@ -37,7 +37,7 @@ func (sc *scanner) ReadExact(
 // ReadUntil advances the scanner by 1 exact token returning either the read
 // fragment or nil if the expectation didn't match
 func (sc *scanner) ReadUntil(
-	fn func(Cursor) uint,
+	fn func(index uint, cursor Cursor) bool,
 	kind FragmentKind,
 ) (tk *Token, err error) {
 	tk, err = sc.Lexer.ReadUntil(fn, kind)

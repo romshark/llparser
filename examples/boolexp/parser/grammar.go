@@ -1,8 +1,6 @@
 package parser
 
-import (
-	llp "github.com/romshark/llparser"
-)
+import llp "github.com/romshark/llparser"
 
 func optional(pattern llp.Pattern) *llp.Repeated {
 	return &llp.Repeated{
@@ -15,28 +13,24 @@ func optional(pattern llp.Pattern) *llp.Repeated {
 // newGrammar returns the grammar of a boolean expression
 func newGrammar() *llp.Rule {
 	termSpace := &llp.Lexed{
-		Fn: func(crs llp.Cursor) uint {
+		Fn: func(_ uint, crs llp.Cursor) bool {
 			switch crs.File.Src[crs.Index] {
 			case ' ':
-				return 1
+				return true
 			case '\t':
-				return 1
+				return true
 			case '\n':
-				return 1
+				return true
 			case '\r':
-				next := crs.Index + 1
-				if next < uint(len(crs.File.Src)) &&
-					crs.File.Src[next] == '\n' {
-					return 2
-				}
+				return true
 			}
-			return 0
+			return false
 		},
 		Kind: FrSpace,
 	}
 
 	termAnything := &llp.Lexed{
-		Fn: func(crs llp.Cursor) uint { return 0 },
+		Fn: func(uint, llp.Cursor) bool { return false },
 	}
 
 	termConstTrue := &llp.Exact{
