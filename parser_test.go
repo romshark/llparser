@@ -208,10 +208,7 @@ func TestParserSequenceErr(t *testing.T) {
 				&llp.Lexed{
 					Designation: "lexed token",
 					Fn: func(_ uint, crs llp.Cursor) bool {
-						if crs.File.Src[crs.Index] == 'b' {
-							return true
-						}
-						return false
+						return crs.File.Src[crs.Index] == 'b'
 					},
 				},
 			},

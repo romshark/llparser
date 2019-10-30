@@ -101,7 +101,7 @@ func (lx *lexer) ReadUntil(
 	subLexerIndex := uint(0)
 
 	for {
-		if lx.reachedEOF() || fn(subLexerIndex, lx.cr) == false {
+		if lx.reachedEOF() || !fn(subLexerIndex, lx.cr) {
 			break
 		}
 		if lx.cr.File.Src[lx.cr.Index] == '\n' {
