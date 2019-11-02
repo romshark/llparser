@@ -52,8 +52,9 @@ func main() {
 				Out:         os.Stdout,
 				Indentation: []byte(" "),
 				Prefix:      []byte(" "),
-				HeadFmt: func(tk *llp.Token) []byte {
-					return []byte(parser.FragKindString(tk.VKind))
+				Format: func(frag llp.Fragment) (head, body []byte) {
+					head = []byte(parser.FragKindString(frag.Kind()))
+					return
 				},
 			},
 		); err != nil {

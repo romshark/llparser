@@ -18,7 +18,7 @@ type FragPrintOptions struct {
 	Indentation []byte
 	Prefix      []byte
 	LineBreak   []byte
-	HeadFmt     func(*Token) []byte
+	Format      func(Fragment) (head, body []byte)
 }
 
 // PrintFragment prints the fragment structure recursively
@@ -97,16 +97,23 @@ func PrintFragment(
 		switch frag := frag.(type) {
 		case *Construct:
 			// Print construct recursively
-			var writeStr []byte
-			if options.HeadFmt != nil {
+			var head, body []byte
+			if options.Format != nil {
 				// Use specified stringification method
-				writeStr = options.HeadFmt(frag.Token)
-			} else {
-				// Fallback to the default stringification method
-				writeStr = []byte(frag.Token.String())
+				head, body = options.Format(frag)
 			}
-			if write(writeStr) {
+			if head == nil {
+				// Fallback to the default stringification method
+				head = []byte(frag.String())
+			}
+			if write(head) {
 				return true
+			}
+			if body != nil {
+				if write(body) {
+					return true
+				}
+				break
 			}
 			if write(snipBlkStart) {
 				return true
@@ -128,15 +135,16 @@ func PrintFragment(
 			return write(snipBlkEnd)
 		case *Token:
 			// Print leave fragment
-			var writeStr []byte
-			if options.HeadFmt != nil {
+			var head []byte
+			if options.Format != nil {
 				// Use specified stringification method
-				writeStr = options.HeadFmt(frag)
-			} else {
-				// Fallback to the default stringification method
-				writeStr = []byte(frag.String())
+				head, _ = options.Format(frag)
 			}
-			if write(writeStr) {
+			if head == nil {
+				// Fallback to the default stringification method
+				head = []byte(frag.String())
+			}
+			if write(head) {
 				return true
 			}
 		default:

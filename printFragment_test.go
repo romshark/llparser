@@ -68,20 +68,37 @@ func TestPrintFragment(t *testing.T) {
 		)
 	})
 
-	t.Run("CustomHeadFmt", func(t *testing.T) {
-		headFmt := func(token *llp.Token) []byte {
-			switch int(token.VKind) {
+	t.Run("CustomFormatHead", func(t *testing.T) {
+		format := func(frag llp.Fragment) ([]byte, []byte) {
+			switch int(frag.Kind()) {
 			case 100:
-				return []byte("First")
+				return []byte("First"), nil
 			case 101:
-				return []byte("Second")
+				return []byte("Second"), nil
 			}
-			return []byte(fmt.Sprintf("T(%d)", int(token.VKind)))
+			return []byte(fmt.Sprintf("T(%d)", int(frag.Kind()))), nil
 		}
 		test(
 			t,
-			llp.FragPrintOptions{HeadFmt: headFmt},
+			llp.FragPrintOptions{Format: format},
 			"First { Second T(102) }",
+		)
+	})
+
+	t.Run("CustomFormatBody", func(t *testing.T) {
+		format := func(frag llp.Fragment) ([]byte, []byte) {
+			if frag.Kind() == llp.FragmentKind(100) {
+				return nil, []byte(fmt.Sprintf(
+					" <%d collapsed>",
+					len(frag.Elements()),
+				))
+			}
+			return nil, nil
+		}
+		test(
+			t,
+			llp.FragPrintOptions{Format: format},
+			"100 (test.txt: 1:1-1:7 'abcdef') <2 collapsed>",
 		)
 	})
 }
