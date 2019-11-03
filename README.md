@@ -216,3 +216,19 @@ if err != nil {
     log.Fatal("Parser error: ", err)
 }
 ```
+
+### Recursion Control
+
+Since rules can be recursive it often makes sense to specify a recursion level limit by setting `Parser.MaxRecursionLevel`:
+
+```
+pr := newParser(t, grammar, errGrammar)
+// Don't recurse over more than 1000 levels
+pr.MaxRecursionLevel = 1000
+```
+
+This will prevent the parser from falling into endless recursion and panicking when the goroutine stack exceeds its size limit and instead make it abort parsing when the specified limit is reached.
+
+Setting `Parser.MaxRecursionLevel` to `0` will disable recursion tracking, which is disabled by default.
+
+`Parser.MaxRecursionLevel` shouldn't be altered while the parser is parsing!
