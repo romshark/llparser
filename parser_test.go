@@ -1042,3 +1042,68 @@ func TestParserNot(t *testing.T) {
 		checkFrag(t, src, elements[1], FrBar, C{1, 4}, C{1, 7}, 1)
 	})
 }
+
+func TestRecursionLimit(t *testing.T) {
+	rc := &llp.Rule{
+		Designation: "C",
+	}
+	rb := &llp.Rule{
+		Designation: "B",
+		Pattern:     rc,
+	}
+	ra := &llp.Rule{
+		Designation: "A",
+		Pattern:     rb,
+	}
+	rc.Pattern = ra
+
+	pr := newParser(t, ra, nil)
+	pr.MaxRecursionLevel = 10
+
+	mainFrag, err := pr.Parse(newSource("a"))
+	require.Error(t, err)
+	require.Equal(
+		t,
+		fmt.Sprintf(
+			"max recursion level exceeded at rule %p (%q) at test.txt:1:1",
+			ra,
+			ra.Designation,
+		),
+		err.Error(),
+	)
+	require.Nil(t, mainFrag)
+}
+
+func TestRecursionLimitErrorGrammar(t *testing.T) {
+	ec := &llp.Rule{
+		Designation: "EC",
+	}
+	eb := &llp.Rule{
+		Designation: "EB",
+		Pattern:     ec,
+	}
+	ea := &llp.Rule{
+		Designation: "EA",
+		Pattern:     eb,
+	}
+	ec.Pattern = ea
+
+	pr := newParser(t, &llp.Rule{
+		Designation: "error grammar",
+		Pattern:     &llp.Exact{Expectation: []rune("okay")},
+	}, ea)
+	pr.MaxRecursionLevel = 10
+
+	mainFrag, err := pr.Parse(newSource("notokay"))
+	require.Error(t, err)
+	require.Equal(
+		t,
+		fmt.Sprintf(
+			"max recursion level exceeded at rule %p (%q) at test.txt:1:1",
+			ea,
+			ea.Designation,
+		),
+		err.Error(),
+	)
+	require.Nil(t, mainFrag)
+}

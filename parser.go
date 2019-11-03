@@ -8,8 +8,13 @@ import (
 
 // Parser represents a parser
 type Parser struct {
-	grammar    *Rule
-	errGrammar *Rule
+	grammar           *Rule
+	errGrammar        *Rule
+	recursionRegister recursionRegister
+
+	// MaxRecursionLevel defines the maximum tolerated recursion level.
+	// The limitation is disabled when MaxRecursionLevel is set to 0
+	MaxRecursionLevel uint
 }
 
 // NewParser creates a new parser instance
@@ -25,9 +30,18 @@ func NewParser(grammar *Rule, errGrammar *Rule) (*Parser, error) {
 			return nil, fmt.Errorf("invalid error-grammar: %w", err)
 		}
 	}
+
+	recRegister := recursionRegister{}
+	findRules(grammar, recRegister)
+	findRules(errGrammar, recRegister)
+
 	return &Parser{
-		grammar:    grammar,
-		errGrammar: errGrammar,
+		grammar:           grammar,
+		errGrammar:        errGrammar,
+		recursionRegister: recRegister,
+
+		// Disable recursion limitation by default
+		MaxRecursionLevel: uint(0),
 	}, nil
 }
 
@@ -244,6 +258,21 @@ func (pr Parser) parseRule(
 	scanner *scanner,
 	rule *Rule,
 ) (frag Fragment, err error) {
+	if pr.MaxRecursionLevel > 0 {
+		pr.recursionRegister[rule]++
+		if pr.recursionRegister[rule] > pr.MaxRecursionLevel {
+			// Max recursion level exceeded
+			return nil, &Err{
+				Err: fmt.Errorf(
+					"max recursion level exceeded at rule %p (%q)",
+					rule,
+					rule.Designation,
+				),
+				At: scanner.Lexer.cr,
+			}
+		}
+	}
+
 	frag, err = pr.handlePattern(scanner, rule.Pattern)
 	if err != nil {
 		return
@@ -284,6 +313,10 @@ func (pr Parser) tryErrRule(
 
 // Parse parses the given rule
 func (pr *Parser) Parse(source *SourceFile) (Fragment, error) {
+	if pr.MaxRecursionLevel > 0 {
+		// Reset the recursion register when recursion limitation is enabled
+		pr.recursionRegister.Reset()
+	}
 	lex := &lexer{cr: NewCursor(source)}
 
 	mainFrag, err := pr.parseRule(newScanner(lex), pr.grammar)
