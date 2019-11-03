@@ -311,7 +311,10 @@ func (pr Parser) tryErrRule(
 	return nil
 }
 
-// Parse parses the given rule
+// Parse parses the given source file.
+//
+// WARNING: Parse isn't safe for concurrent use and shall therefore
+// not be executed by multiple goroutines concurrently!
 func (pr *Parser) Parse(source *SourceFile) (Fragment, error) {
 	if pr.MaxRecursionLevel > 0 {
 		// Reset the recursion register when recursion limitation is enabled
