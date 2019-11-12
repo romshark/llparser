@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 )
 
 // Parser represents a parser
@@ -112,46 +111,6 @@ func (pr Parser) parseNot(
 		}
 	default:
 		return err
-	}
-}
-
-func stringifyPattern(pt Pattern) string {
-	switch tp := pt.(type) {
-	case *Rule:
-		return fmt.Sprintf("rule (%s)", tp.Designation)
-	case *Exact:
-		return fmt.Sprintf("exact (%d)", tp.Kind)
-	case *Lexed:
-		return fmt.Sprintf("lexed (%s)", tp.Designation)
-	case Sequence:
-		elementNames := make([]string, len(tp))
-		for ix, elem := range tp {
-			elementNames[ix] = stringifyPattern(elem)
-		}
-		return fmt.Sprintf(
-			"sequence <- %s",
-			strings.Join(elementNames, ", "),
-		)
-	case Not:
-		return fmt.Sprintf("not <- %s", stringifyPattern(tp.Pattern))
-	case *Repeated:
-		return fmt.Sprintf(
-			"repeated (min: %d, max: %d) <- %s",
-			tp.Min,
-			tp.Max,
-			stringifyPattern(tp.Pattern),
-		)
-	case Either:
-		optionNames := make([]string, len(tp))
-		for ix, elem := range tp {
-			optionNames[ix] = stringifyPattern(elem)
-		}
-		return fmt.Sprintf(
-			"either <- %s",
-			strings.Join(optionNames, " / "),
-		)
-	default:
-		panic(fmt.Errorf("unexpected pattern type: %s", reflect.TypeOf(tp)))
 	}
 }
 
