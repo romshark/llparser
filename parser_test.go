@@ -463,7 +463,8 @@ func TestParserRepeatedMin2(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(
 			t,
-			"unexpected token, expected {keyword foo} at test.txt:1:4",
+			"unexpected token, expected "+
+				"{2+ repetitions of keyword foo} at test.txt:1:4",
 			err.Error(),
 		)
 		require.Nil(t, mainFrag)

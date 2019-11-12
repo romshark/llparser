@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 // Parser represents a parser
@@ -46,44 +47,36 @@ func NewParser(grammar *Rule, errGrammar *Rule) (*Parser, error) {
 }
 
 func (pr Parser) handlePattern(
+	debug *DebugProfile,
 	scan *scanner,
 	pattern Pattern,
+	level uint,
 ) (frag Fragment, err error) {
 	switch pt := pattern.(type) {
 	case *Rule:
-		frag, err = pr.parseRule(scan.New(), pt)
+		frag, err = pr.parseRule(debug, scan.New(), pt, level)
 		if err, ok := err.(*ErrUnexpectedToken); ok {
 			// Override expected pattern to the higher-order rule
 			err.Expected = pt
 		}
 
 	case *Exact:
-		if scan.Lexer.reachedEOF() {
-			return nil, errEOF{}
-		}
-		// Exact terminal
-		frag, err = pr.parseExact(scan, pt)
+		frag, err = pr.parseExact(debug, scan, pt, level)
 
 	case *Lexed:
-		if scan.Lexer.reachedEOF() {
-			return nil, errEOF{}
-		}
-		frag, err = pr.parseLexed(scan, pt)
+		frag, err = pr.parseLexed(debug, scan, pt, level)
 
 	case *Repeated:
-		err = pr.parseRepeated(scan, pt.Min, pt.Max, pt.Pattern)
+		err = pr.parseRepeated(debug, scan, pt.Min, pt.Max, pt, level)
 
 	case Sequence:
-		// Sequence
-		err = pr.parseSequence(scan, pt)
+		err = pr.parseSequence(debug, scan, pt, level)
 
 	case Either:
-		// Choice
-		frag, err = pr.parseEither(scan, pt)
+		frag, err = pr.parseEither(debug, scan, pt, level)
 
 	case Not:
-		// Expect no match
-		err = pr.parseNot(scan, pt)
+		err = pr.parseNot(debug, scan, pt, level)
 
 	default:
 		panic(fmt.Errorf(
@@ -94,9 +87,16 @@ func (pr Parser) handlePattern(
 	return
 }
 
-func (pr Parser) parseNot(scan *scanner, ptr Not) error {
+func (pr Parser) parseNot(
+	debug *DebugProfile,
+	scan *scanner,
+	ptr Not,
+	level uint,
+) error {
+	debugIndex := debug.record(ptr, scan.Lexer.cr, level)
+
 	beforeCr := scan.Lexer.cr
-	_, err := pr.handlePattern(scan, ptr.Pattern)
+	_, err := pr.handlePattern(debug, scan, ptr.Pattern, level+1)
 	switch err := err.(type) {
 	case *ErrUnexpectedToken:
 		scan.Set(beforeCr)
@@ -105,6 +105,7 @@ func (pr Parser) parseNot(scan *scanner, ptr Not) error {
 		scan.Set(beforeCr)
 		return nil
 	case nil:
+		debug.markMismatch(debugIndex)
 		return &ErrUnexpectedToken{
 			At:       beforeCr,
 			Expected: ptr,
@@ -114,16 +115,66 @@ func (pr Parser) parseNot(scan *scanner, ptr Not) error {
 	}
 }
 
+func stringifyPattern(pt Pattern) string {
+	switch tp := pt.(type) {
+	case *Rule:
+		return fmt.Sprintf("rule (%s)", tp.Designation)
+	case *Exact:
+		return fmt.Sprintf("exact (%d)", tp.Kind)
+	case *Lexed:
+		return fmt.Sprintf("lexed (%s)", tp.Designation)
+	case Sequence:
+		elementNames := make([]string, len(tp))
+		for ix, elem := range tp {
+			elementNames[ix] = stringifyPattern(elem)
+		}
+		return fmt.Sprintf(
+			"sequence <- %s",
+			strings.Join(elementNames, ", "),
+		)
+	case Not:
+		return fmt.Sprintf("not <- %s", stringifyPattern(tp.Pattern))
+	case *Repeated:
+		return fmt.Sprintf(
+			"repeated (min: %d, max: %d) <- %s",
+			tp.Min,
+			tp.Max,
+			stringifyPattern(tp.Pattern),
+		)
+	case Either:
+		optionNames := make([]string, len(tp))
+		for ix, elem := range tp {
+			optionNames[ix] = stringifyPattern(elem)
+		}
+		return fmt.Sprintf(
+			"either <- %s",
+			strings.Join(optionNames, " / "),
+		)
+	default:
+		panic(fmt.Errorf("unexpected pattern type: %s", reflect.TypeOf(tp)))
+	}
+}
+
 func (pr Parser) parseLexed(
+	debug *DebugProfile,
 	scanner *scanner,
 	expected *Lexed,
+	level uint,
 ) (Fragment, error) {
+	debugIndex := debug.record(expected, scanner.Lexer.cr, level)
+
+	if scanner.Lexer.reachedEOF() {
+		debug.markMismatch(debugIndex)
+		return nil, errEOF{}
+	}
+
 	beforeCr := scanner.Lexer.cr
 	tk, err := scanner.ReadUntil(expected.Fn, expected.Kind)
 	if err != nil {
 		return nil, err
 	}
 	if tk == nil || tk.VEnd.Index-tk.VBegin.Index < expected.MinLen {
+		debug.markMismatch(debugIndex)
 		return nil, &ErrUnexpectedToken{
 			At:       beforeCr,
 			Expected: expected,
@@ -133,11 +184,15 @@ func (pr Parser) parseLexed(
 }
 
 func (pr Parser) parseRepeated(
+	debug *DebugProfile,
 	scanner *scanner,
 	min uint,
 	max uint,
-	pattern Pattern,
+	repeated *Repeated,
+	level uint,
 ) error {
+	debugIndex := debug.record(repeated, scanner.Lexer.cr, level)
+
 	num := uint(0)
 	lastPosition := scanner.Lexer.cr
 	for {
@@ -145,7 +200,12 @@ func (pr Parser) parseRepeated(
 			break
 		}
 
-		frag, err := pr.handlePattern(scanner, pattern)
+		frag, err := pr.handlePattern(
+			debug,
+			scanner,
+			repeated.Pattern,
+			level+1,
+		)
 		switch err := err.(type) {
 		case *ErrUnexpectedToken:
 			if min != 0 && num < min {
@@ -159,9 +219,10 @@ func (pr Parser) parseRepeated(
 		case errEOF:
 			if min != 0 && num < min {
 				// Mismatch before the minimum is read
+				debug.markMismatch(debugIndex)
 				return &ErrUnexpectedToken{
 					At:       scanner.Lexer.cr,
-					Expected: pattern,
+					Expected: repeated,
 				}
 			}
 			// Reset scanner to the last match
@@ -172,8 +233,8 @@ func (pr Parser) parseRepeated(
 			num++
 			lastPosition = scanner.Lexer.cr
 			// Append rule patterns, other patterns are appended automatically
-			if !pattern.Container() {
-				scanner.Append(pattern, frag)
+			if !repeated.Pattern.Container() {
+				scanner.Append(repeated.Pattern, frag)
 			}
 
 		default:
@@ -185,12 +246,17 @@ func (pr Parser) parseRepeated(
 }
 
 func (pr Parser) parseSequence(
+	debug *DebugProfile,
 	scanner *scanner,
 	patterns Sequence,
+	level uint,
 ) error {
+	debugIndex := debug.record(patterns, scanner.Lexer.cr, level)
+
 	for _, pt := range patterns {
-		frag, err := pr.handlePattern(scanner, pt)
+		frag, err := pr.handlePattern(debug, scanner, pt, level+1)
 		if err != nil {
+			debug.markMismatch(debugIndex)
 			return err
 		}
 		// Append rule patterns, other patterns are appended automatically
@@ -202,25 +268,33 @@ func (pr Parser) parseSequence(
 }
 
 func (pr Parser) parseEither(
+	debug *DebugProfile,
 	scanner *scanner,
 	patternOptions Either,
+	level uint,
 ) (Fragment, error) {
+	debugIndex := debug.record(patternOptions, scanner.Lexer.cr, level)
+
 	beforeCr := scanner.Lexer.cr
 	for ix, pt := range patternOptions {
 		lastOption := ix >= len(patternOptions)-1
 
-		frag, err := pr.handlePattern(scanner, pt)
+		frag, err := pr.handlePattern(debug, scanner, pt, level+1)
 		if err != nil {
 			if er, ok := err.(*ErrUnexpectedToken); ok {
 				if lastOption {
 					// Set actual expected pattern
 					er.Expected = patternOptions
+					debug.markMismatch(debugIndex)
 				} else {
 					// Reset scanner to the initial position
 					scanner.Set(beforeCr)
 					// Continue checking other options
 					continue
 				}
+			} else {
+				// Unexpected error
+				debug.markMismatch(debugIndex)
 			}
 			return nil, err
 		}
@@ -234,9 +308,18 @@ func (pr Parser) parseEither(
 }
 
 func (pr Parser) parseExact(
+	debug *DebugProfile,
 	scanner *scanner,
 	exact *Exact,
+	level uint,
 ) (Fragment, error) {
+	debugIndex := debug.record(exact, scanner.Lexer.cr, level)
+
+	if scanner.Lexer.reachedEOF() {
+		debug.markMismatch(debugIndex)
+		return nil, errEOF{}
+	}
+
 	beforeCr := scanner.Lexer.cr
 	tk, match, err := scanner.ReadExact(
 		exact.Expectation,
@@ -246,6 +329,7 @@ func (pr Parser) parseExact(
 		return nil, err
 	}
 	if !match {
+		debug.markMismatch(debugIndex)
 		return nil, &ErrUnexpectedToken{
 			At:       beforeCr,
 			Expected: exact,
@@ -255,9 +339,13 @@ func (pr Parser) parseExact(
 }
 
 func (pr Parser) parseRule(
+	debug *DebugProfile,
 	scanner *scanner,
 	rule *Rule,
+	level uint,
 ) (frag Fragment, err error) {
+	debugIndex := debug.record(rule, scanner.Lexer.cr, level)
+
 	if pr.MaxRecursionLevel > 0 {
 		pr.recursionRegister[rule]++
 		if pr.recursionRegister[rule] > pr.MaxRecursionLevel {
@@ -273,8 +361,9 @@ func (pr Parser) parseRule(
 		}
 	}
 
-	frag, err = pr.handlePattern(scanner, rule.Pattern)
+	frag, err = pr.handlePattern(debug, scanner, rule.Pattern, level+1)
 	if err != nil {
+		debug.markMismatch(debugIndex)
 		return
 	}
 	if !rule.Pattern.Container() {
@@ -292,12 +381,13 @@ func (pr Parser) parseRule(
 }
 
 func (pr Parser) tryErrRule(
+	debug *DebugProfile,
 	lex *lexer,
 	errRule *Rule,
 	previousUnexpErr error,
 ) error {
 	if errRule != nil {
-		_, err := pr.parseRule(newScanner(lex), errRule)
+		_, err := pr.parseRule(debug, newScanner(lex), errRule, 0)
 		if err == nil {
 			// Return the previous error when no error was returned
 			return previousUnexpErr
@@ -311,24 +401,39 @@ func (pr Parser) tryErrRule(
 	return nil
 }
 
+// Debug parses the given source file in debug mode generating a debug profile
+func (pr *Parser) Debug(source *SourceFile) (*DebugProfile, Fragment, error) {
+	debug := newDebugProfile()
+	mainFrag, err := pr.parse(source, debug)
+	return debug, mainFrag, err
+}
+
 // Parse parses the given source file.
 //
 // WARNING: Parse isn't safe for concurrent use and shall therefore
 // not be executed by multiple goroutines concurrently!
 func (pr *Parser) Parse(source *SourceFile) (Fragment, error) {
+	return pr.parse(source, nil)
+}
+
+func (pr *Parser) parse(
+	source *SourceFile,
+	debug *DebugProfile,
+) (Fragment, error) {
 	if pr.MaxRecursionLevel > 0 {
 		// Reset the recursion register when recursion limitation is enabled
 		pr.recursionRegister.Reset()
 	}
-	lex := &lexer{cr: NewCursor(source)}
+	cr := NewCursor(source)
+	lex := &lexer{cr: cr}
 
-	mainFrag, err := pr.parseRule(newScanner(lex), pr.grammar)
+	mainFrag, err := pr.parseRule(debug, newScanner(lex), pr.grammar, 0)
 	if err != nil {
 		if err, ok := err.(*ErrUnexpectedToken); ok {
 			// Reset the lexer to the start position of the error
 			lex.cr = err.At
 		}
-		if err := pr.tryErrRule(lex, pr.errGrammar, err); err != nil {
+		if err := pr.tryErrRule(debug, lex, pr.errGrammar, err); err != nil {
 			return nil, err
 		}
 		return nil, err
@@ -356,7 +461,7 @@ func (pr *Parser) Parse(source *SourceFile) (Fragment, error) {
 
 		unexpErr := &ErrUnexpectedToken{At: last.VBegin}
 
-		if err := pr.tryErrRule(lex, pr.errGrammar, unexpErr); err != nil {
+		if err := pr.tryErrRule(debug, lex, pr.errGrammar, unexpErr); err != nil {
 			return nil, err
 		}
 
